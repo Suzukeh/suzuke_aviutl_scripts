@@ -7,3 +7,4 @@ local chara_h=obj.track1
 local floor_h=obj.track2
 
 local h=obj.screen_h
+
