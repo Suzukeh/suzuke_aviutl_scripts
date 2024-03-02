@@ -1,14 +1,14 @@
 @身長補助線
 --[[
 身長のラインを描画する補助線のカスタムオブジェクトです。
-投影する高さ、キャラの身長、床の高さ、線の太さと色を設定できます。
+投影する高さ、キャラの身長、床の高さ、線の名前・太さ・色を設定できます。
 また、プリセットを指定すると色と身長の設定が上書きされます。
 ダイアログに番号か名前を入力してください。
 例えば、ミクを選ぶ場合
 1
 または
-"miku"
-と入力してください。名前を入力するときはダブルクォーテーションで囲む必要があります。
+miku
+と入力してください。
 プリセット値を適用したくないときはその項目のチェックを外してください。
 
 プリセットの対応表は以下の通りです。「プリセット一覧」のチェックをつけると画面に表示されます。
@@ -29,29 +29,29 @@
 --track0:投影高/cm,0,1000,200
 --track1:身長/cm,0,1000,158
 --track2:床高さ/cm,0,1000,0
---track3:線幅,0,100,2
+--track3:線幅,0,100,5
 --check0:プリセット一覧,0
 --dialog:名前,local name="";色/col,local col=0x39c5bb;拡大率無視/chk,local ig_zoom=0;プリセット,local preset="";└名前/chk,local pre_name=1;└色/chk,local pre_col=1;└身長/chk,local pre_h=1;
 
 
 --入力値
-local zoom=obj.getvalue("zoom")/100*(1-ig_zoom)
 local screen_h_cm=obj.track0
 local chara_h_cm=obj.track1
 local floor_h_cm=obj.track2
 local line_w=obj.track3
 local itiran=obj.check0
 
-if (ig_zoom==1) then
-    zoom=1
+--いろいろな値
+local zoom=1
+if (ig_zoom==0) then
+    zoom=obj.getvalue("zoom")/100*(1-ig_zoom)
 end
-
---画面幅
 local h=obj.screen_h
 local w=obj.screen_w
 
-
 --プリセット適用
+--キャラを追加したい場合はここに追加する
+--[index]={小文字,色,身長,名前}
 local pre_table={
     [1]={"tsugu",0xf8b7e9,158,"歌奏絆"},
     [2]={"miku",0x39c5bb,158,"初音ミク"},
@@ -66,24 +66,23 @@ local pre_table={
 }
 
 local index=nil
-local col1=col
-local chara_h_cm1=chara_h_cm
 
 for i,v in pairs(pre_table) do
-    if (v[1]==preset) then
+    if (v[1]==preset) then --プリセットのダイアログ入力はstringなので、まずは名前を探す
         index=i
         break
     end
 end
 
-if (index==nil) then
+if (index==nil) then --名前がヒットしなかったときは番号で探す
     preset=tonumber(preset)
     if (preset~=nil) and  (preset>=0) and (preset+1 <= #pre_table) then
         index=preset+1 --ダイアログ入力は0から始めたかったので(最悪)
     end
 end
 
-if (index~=nil) then
+
+if (index~=nil) then --プリセットが見つかったときは値を上書き
     if (pre_name==1) then
         name=pre_table[index][4]
     end
@@ -95,9 +94,7 @@ if (index~=nil) then
     end
 end
 
-
-
---投影-px換算
+--cm→px換算
 local px_cm=h/screen_h_cm
 local chara_h=chara_h_cm*px_cm
 local floor_h=floor_h_cm*px_cm
@@ -113,24 +110,24 @@ local y1=(cap+line_w/2)*zoom
 obj.load("figure","四角形",col,1)
 obj.drawpoly(x0,y0,0,x1,y0,0,x1,y1,0,x0,y1,0)
 
-debug_print(name)
-if (name~=nil) then
-    debug_print(name)
-    obj.setfont("MS UI Gothic",60,0,col)
-    obj.load("text",name)
-    obj.draw(x0+obj.w/2*1.5,y0+obj.h/2*1.5,0)
-end
-
 --床線の描画
 local floor=h/2-floor_h
 local y2=(floor-line_w/2)*zoom
 local y3=(floor+line_w/2)*zoom
 obj.drawpoly(x0,y2,0,x1,y2,0,x1,y3,0,x0,y3,0)
 
+--線の名前の描画
+if (name~=nil) then
+    obj.setfont("MS UI Gothic",100,3,0xffffff,col)
+    obj.load("text",name)
+    local xn=x0+(obj.w/obj.getvalue("zoom")*100)*zoom/2+w*0.01
+    local yn=cap+(obj.h/obj.getvalue("zoom")*100)*zoom/2+h*0.01
+    obj.drawpoly(x0,cap,0,xn,cap,0,xn,yn,0,x0,yn,0)
+end
 
---プリセット一覧
+--プリセット一覧の描画
 if (itiran) then
-    local itiran_str="番号または小文字の名前を入力してください。\n名前で指定する場合はダブルクォーテーション\nで囲む必要があります。\n\n番号: 名前, 小文字\n"
+    local itiran_str="番号または小文字の名前を入力してください。\n\n番号: 名前, 小文字\n"
     for i,v in ipairs(pre_table) do
         itiran_str=itiran_str..(i-1)..": "..v[4]..", "..v[1].."\n"
     end
