@@ -1,0 +1,332 @@
+@縁取りT並べ
+--さつきさんの一方向を改変
+--縁取りをかけて並べる
+--拡大率と角度を変えながら、同じ太さの縁取りをかけられる
+
+--track0:個数,1,50,5,1
+--track1:間隔,-1000,1000,0
+--track2:角度,-720,720,0
+--track3:拡大率変化,-500,500,0
+--dialog:方向,local axis=0;回転,local rot=0;双方向/chk,local sou=0;└線対称/chk,local sim=0;負の拡大率/chk,local minus=0;縁取り,local futi=2;└サイズ,local h_size=10;└ぼかし,local h_bokeh=1;└α基準,local h_alp=128;└合成量,local h_add=-100;└色/col,local col=0x0;
+
+local n=obj.track0
+local l=obj.track1
+local r=obj.track2+90
+local w=obj.w
+local h=obj.h
+local aa=0
+local bb=n-1
+
+--拡大率と角度変更用
+local sp=obj.track3
+local s=obj.getvalue("zoom")
+local si=s/100
+local si_fix=si
+local rz=obj.getvalue("rz")
+local ri=rz
+
+--縁取りT用
+local zoom=obj.zoom*obj.getvalue("zoom")/100
+local h_size_fix=h_size
+local h_bokeh_fix=h_bokeh
+local h_acc = 0;
+local param = "local col1="..col..";local col2="..col..";local Lgr=0;local Mis=0;local MiV=25;local MiA=25;local mode=0;"
+
+if(futi>0) then
+  obj.copybuffer("cache:origin_su","obj")
+end
+
+if(sou==1) then
+  aa=-n+1 bb=n-1
+  if(sim==0) then
+    si=si+sp/100*aa
+  else
+    si=si-sp/100*aa
+  end
+end
+
+
+
+for i=aa,bb do
+  local sin=math.sin(r*math.pi/180)*l*i
+  local cos=-math.cos(r*math.pi/180)*l*i
+  local cx,cy,z=0,0,0
+
+  si_fix=si
+  if(minus==1) then
+    if(si<=0) then
+      si_fix=si*-1
+    end
+  elseif (si<0) then
+    goto continue
+  end
+
+  if(axis<1) then
+    cx=sin cy=cos z=0
+  elseif(axis<2) then
+    cx=sin cy=0 z=cos
+  else
+    cx=0 cy=cos z=sin
+  end
+
+  if(futi>0) then
+    obj.copybuffer("obj","cache:origin_su")
+    if (futi==2) then
+      h_size_fix=h_size/si_fix
+      h_bokeh_fix=h_bokeh/si_fix
+    end
+    obj.effect("アニメーション効果","name","縁取りT","track0",h_size_fix,"track1",h_bokeh_fix,"track2",h_alp,"track3",h_add,"check0",h_acc,"param",param)
+  end
+  obj.draw(cx,cy,0,si_fix,1,0,0,ri)
+
+  ::continue::
+  if (sim==0) or (sou==0) then
+    si=si+sp/100
+  else
+    if (i<0) then
+      si=si-sp/100
+    else
+      si=si+sp/100
+    end
+  end
+  ri=ri+rot
+end
+
+if (futi==1) then
+  --obj.copybuffer("obj","cache:out")
+else
+  --obj.copybuffer("obj","cache:out")
+end
+
+
+::fin::
+
+
+@直線
+--さつきさんの一方向を改変
+--縁取りをかけて並べる
+--拡大率と角度を変えながら、同じ太さの縁取りをかけられる
+
+--track0:個数,1,50,5,1
+--track1:間隔,-1000,1000,0
+--track2:角度,-720,720,0
+--track3:拡大率変化,-500,500,0
+--dialog:方向,local axis=0;回転,local rot=0;双方向/chk,local sou=0;└線対称/chk,local sim=0;負の拡大率/chk,local minus=0;縁取り,local futi=2;└サイズ,local h_size=10;└ぼかし,local h_bokeh=1;└α基準,local h_alp=128;└合成量,local h_add=-100;└色/col,local col=0x0;個別/chk,local kobetu=0;
+
+local n=obj.track0
+local l=obj.track1
+local r=obj.track2+90
+local w=obj.w
+local h=obj.h
+local aa=0
+local bb=n-1
+
+--拡大率と角度変更用
+local sp=obj.track3
+local s=obj.getvalue("zoom")
+local si=s/100
+local si_fix=si
+local rz=obj.getvalue("rz")
+local ri=rz
+
+--個別オブジェクト
+--local kobetu = obj.check0
+local num = obj.num
+if(kobetu==1) then
+  require("rikky_module")
+  local id=rikky_module.image("g")
+  rikky_module.image("w", id)
+end
+for k,v in pairs(obj) do debug_print(k) end
+
+
+
+--縁取りT用
+local zoom=obj.zoom*obj.getvalue("zoom")/100
+local h_size_fix=h_size
+local h_bokeh_fix=h_bokeh
+local h_acc = 0;
+local param = "local col1="..col..";local col2="..col..";local Lgr=0;local Mis=0;local MiV=25;local MiA=25;local mode=0;"
+
+if(futi>0) then
+  obj.copybuffer("cache:origin_su","obj")
+end
+
+if(sou==1) then
+  aa=-n+1 bb=n-1
+  if(sim==0) then
+    si=si+sp/100*aa
+  else
+    si=si-sp/100*aa
+  end
+end
+
+
+
+for i=aa,bb do
+  local sin=math.sin(r*math.pi/180)*l*i
+  local cos=-math.cos(r*math.pi/180)*l*i
+  local cx,cy,z=0,0,0
+  if(axis<1) then
+    cx=sin cy=cos z=0
+  elseif(axis<2) then
+    cx=sin cy=0 z=cos
+  else
+    cx=0 cy=cos z=sin
+  end
+
+  --負の拡大率処理
+  si_fix=si
+  if(minus==1) then
+    if(si<=0) then
+      si_fix=si*-1
+    end
+  elseif (si<0) then
+    goto continue
+  end
+
+  --縁取りT
+  if(futi>0) then
+    if (futi==2) then
+      h_size_fix=h_size/si_fix
+      h_bokeh_fix=h_bokeh/si_fix
+    end
+    if(kobetu==1) then
+      --rikky_module.effect(i,n,"アニメーション効果","name","縁取りT","track0",h_size_fix,"track1",h_bokeh_fix,"track2",h_alp,"track3",h_add,"check0",h_acc,"param",param)
+      rikky_module.image("r",id)
+    else
+      obj.copybuffer("obj","cache:origin_su")
+      obj.effect("アニメーション効果","name","縁取りT","track0",h_size_fix,"track1",h_bokeh_fix,"track2",h_alp,"track3",h_add,"check0",h_acc,"param",param)
+    end
+  end
+  if(kobetu==1) then
+    rikky_module.effect(i,n)
+    obj.draw(cx,cy,0,si_fix,1,0,0,ri)
+  else
+    obj.draw(cx,cy,0,si_fix,1,0,0,ri)
+  end
+
+  ::continue::
+  --双方向と線対称
+  if (sim==0) or (sou==0) then
+    si=si+sp/100
+  else
+    if (i<0) then
+      si=si-sp/100
+    else
+      si=si+sp/100
+    end
+  end
+  ri=ri+rot
+end
+
+if(kobetu==1) then
+  rikky_module.image("c",id)
+end
+
+::fin::
+
+@斜
+--track0:個数,1,50,5,1
+--track1:間隔,-1000,1000,0
+--track2:角度,-720,720,0
+--track3:拡大率変化,-500,500,0
+--dialog:方向,local axis=0;回転,local rot=0;双方向/chk,local sou=0;└線対称/chk,local sim=0;負の拡大率/chk,local minus=0;縁取り,local futi=2;└サイズ,local h_size=10;└ぼかし,local h_bokeh=1;└α基準,local h_alp=128;└合成量,local h_add=-100;└色/col,local col=0x0;
+
+local n=obj.track0
+local l=obj.track1
+local r=obj.track2+90
+local w=obj.w
+local h=obj.h
+local aa=0
+local bb=n-1
+
+--拡大率と角度変更用
+local sp=obj.track3
+local s=obj.getvalue("zoom")
+local si=s/100
+local si_fix=si
+local rz=obj.getvalue("rz")
+local ri=rz
+
+--縁取りT用
+local zoom=obj.zoom*obj.getvalue("zoom")/100
+local h_size_fix=h_size
+local h_bokeh_fix=h_bokeh
+local h_acc = 0;
+local param = "local col1="..col..";local col2="..col..";local Lgr=0;local Mis=0;local MiV=25;local MiA=25;local mode=0;"
+
+if(futi>0) then
+  obj.copybuffer("cache:origin_su","obj")
+end
+
+if(sou==1) then
+  aa=-n+1 bb=n-1
+  if(sim==0) then
+    si=si+sp/100*aa
+  else
+    si=si-sp/100*aa
+  end
+end
+
+
+
+for i=aa,bb do
+  local sin=math.sin(r*math.pi/180)*l*i
+  local cos=-math.cos(r*math.pi/180)*l*i
+  local cx,cy,z=0,0,0
+
+  si_fix=si
+  if(minus==1) then
+    if(si<=0) then
+      si_fix=si*-1
+    end
+  elseif (si<0) then
+    goto continue
+  end
+
+  if(axis<1) then
+    cx=sin cy=cos z=0
+  elseif(axis<2) then
+    cx=sin cy=0 z=cos
+  else
+    cx=0 cy=cos z=sin
+  end
+
+  if(futi>0) then
+    obj.copybuffer("obj","cache:origin_su")
+    if (futi==2) then
+      h_size_fix=h_size/si_fix
+      h_bokeh_fix=h_bokeh/si_fix
+    end
+    obj.effect("アニメーション効果","name","縁取りT","track0",h_size_fix,"track1",h_bokeh_fix,"track2",h_alp,"track3",h_add,"check0",h_acc,"param",param)
+  end
+  obj.draw(cx,cy,0,si_fix,1,0,0,ri)
+
+  ::continue::
+  if (sim==0) or (sou==0) then
+    si=si+sp/100
+  else
+    if (i<0) then
+      si=si-sp/100
+    else
+      si=si+sp/100
+    end
+  end
+  ri=ri+rot
+end
+
+if (futi==1) then
+  --obj.copybuffer("obj","cache:out")
+else
+  --obj.copybuffer("obj","cache:out")
+end
+
+
+::fin::
+
+
+
+
+
+

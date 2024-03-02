@@ -1,0 +1,9 @@
+--track0:“Š‰e‚‚³/cm,0,1000,200
+--track1:ƒLƒƒƒ‰g’·/cm,0,1000,158
+--track2:°‚‚³/cm,0,1000,0
+
+local screen_h=obj.track0
+local chara_h=obj.track1
+local floor_h=obj.track2
+
+local h=obj.screen_h
