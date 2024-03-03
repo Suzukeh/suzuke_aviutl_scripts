@@ -12,17 +12,17 @@ miku
 プリセット値を適用したくないときはその項目のチェックを外してください。
 
 プリセットの対応表は以下の通りです。「プリセット一覧」のチェックをつけると画面に表示されます。
-番号: 名前, 名前(設定用)
-0: 歌奏絆, tsugu
-1: 初音ミク, miku
-2: 鏡音リン, rin
-3: 鏡音レン, len
-4: 巡音ルカ, luka
-5: MEIKO, meiko
-6: KAITO, kaito
-7: IA, ia
-8: ONE, one
-9: flower, flower
+番号:身長, 名前, 小文字名
+1:158cm, 歌奏絆, tsugu
+2:158cm, 初音ミク, miku
+3:152cm, 鏡音リン, rin
+4:156cm, 鏡音レン, len
+5:162cm, 巡音ルカ, luka
+6:167cm, MEIKO, meiko
+7:175cm, KAITO, kaito
+8:155cm, IA, ia
+9:150cm, ONE, one
+10:159cm, flower, flower
 ]]
 
 
@@ -127,11 +127,11 @@ end
 
 --プリセット一覧の描画
 if (itiran) then
-    local itiran_str="番号または小文字の名前を入力してください。\n\n番号: 名前, 小文字\n"
+    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:身長, 名前, 小文字名\n"
     for i,v in ipairs(pre_table) do
-        itiran_str=itiran_str..(i-1)..": "..v[4]..", "..v[1].."\n"
+        itiran_str=itiran_str..i..":"..v[3].."cm, "..v[4]..", "..v[1].."\n"
     end
-    --debug_print(str) --説明欄に書くときコピペできるように
+    --debug_print(itiran_str) --説明欄に書くときコピペできるように
     obj.setfont("MS UI Gothic",40,0,0xffffff)
     obj.load("text",itiran_str)
     obj.draw(0,0,0)
