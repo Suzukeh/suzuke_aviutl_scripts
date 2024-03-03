@@ -12,17 +12,17 @@ miku
 プリセット値を適用したくないときはその項目のチェックを外してください。
 
 プリセットの対応表は以下の通りです。「プリセット一覧」のチェックをつけると画面に表示されます。
-番号:身長, 名前, 小文字名
-1:158cm, 歌奏絆, tsugu
-2:158cm, 初音ミク, miku
-3:152cm, 鏡音リン, rin
-4:156cm, 鏡音レン, len
-5:162cm, 巡音ルカ, luka
-6:167cm, MEIKO, meiko
-7:175cm, KAITO, kaito
-8:155cm, IA, ia
-9:150cm, ONE, one
-10:159cm, flower, flower
+番号:名前, 小文字名, 身長
+1:歌奏絆, tsugu, 158cm
+2:初音ミク, miku, 158cm
+3:鏡音リン, rin, 152cm
+4:鏡音レン, len, 156cm
+5:巡音ルカ, luka, 162cm
+6:MEIKO, meiko, 167cm
+7:KAITO, kaito, 175cm
+8:IA, ia, 155cm
+9:ONE, one, 150cm
+10:flower, flower, 159cm
 ]]
 
 
@@ -42,10 +42,8 @@ local line_w=obj.track3
 local itiran=obj.check0
 
 --いろいろな値
-local zoom=1
-if (ig_zoom==0) then
-    zoom=obj.getvalue("zoom")/100*(1-ig_zoom)
-end
+local zoom0=obj.getvalue("zoom")/100
+local zoom=zoom0*(1-ig_zoom)*zoom0+ig_zoom*1
 local h=obj.screen_h
 local w=obj.screen_w
 
@@ -120,18 +118,18 @@ obj.drawpoly(x0,y2,0,x1,y2,0,x1,y3,0,x0,y3,0)
 if (name~=nil) then
     obj.setfont("MS UI Gothic",100,3,0xffffff,col)
     obj.load("text",name)
-    local xn=x0+(obj.w/obj.getvalue("zoom")*100)*zoom/2+w*0.01
-    local yn=cap+(obj.h/obj.getvalue("zoom")*100)*zoom/2+h*0.01
-    obj.drawpoly(x0,cap,0,xn,cap,0,xn,yn,0,x0,yn,0)
+    local xn=x0+(obj.w/zoom0)*zoom/2+w*0.01
+    local yn=y0+(obj.h/zoom0)*zoom/2+h*0.01
+    obj.drawpoly(x0,y0,0,xn,y0,0,xn,yn,0,x0,yn,0)
 end
 
 --プリセット一覧の描画
 if (itiran) then
-    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:身長, 名前, 小文字名\n"
+    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:名前, 小文字名, 身長\n"
     for i,v in ipairs(pre_table) do
-        itiran_str=itiran_str..i..":"..v[3].."cm, "..v[4]..", "..v[1].."\n"
+        itiran_str=itiran_str..i..":"..v[4]..", "..v[1]..", "..v[3].."cm\n"
     end
-    --debug_print(itiran_str) --説明欄に書くときコピペできるように
+    debug_print(itiran_str) --説明欄に書くときコピペできるように
     obj.setfont("MS UI Gothic",40,0,0xffffff)
     obj.load("text",itiran_str)
     obj.draw(0,0,0)
