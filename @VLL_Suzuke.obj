@@ -36,6 +36,8 @@ miku
 https://dic.nicovideo.jp/a/vocaloidの関連キャラクター基本イメージ一覧
 追加してほしいものがあればIssuesやPull Requestでの情報提供をお願いします。
 
+]]
+
 
 --track0:投影高/cm,0,1000,200
 --track1:身長/cm,0,1000,158
@@ -72,6 +74,13 @@ local pre_table={
     [8]={"ia",0xefb8d3,155,"IA"},
     [9]={"one",0xff8229,150,"ONE"},
     [10]={"flower",0xe895db,159,"flower"},
+    [11]={"una",0x00bfff,148.5,"音街ウナ"},
+    [12]={"tianyi",0x00bfff,156,"洛天依"},
+    [13]={"teto",0x00bfff,159.5,"重音テト"},
+    [14]={"ritsu",0x00bfff,156,"波音リツ"},
+    [15]={"yukari",0x00bfff,159,"結月ゆかり"},
+    [16]={"akari",0x00bfff,151,"紲星あかり"},
+    [17]={"maki",0x00bfff,158,"弦巻マキ"}
 }
 
 local index=nil
