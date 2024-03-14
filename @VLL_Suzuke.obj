@@ -23,7 +23,18 @@ miku
 8:IA, ia, 155cm
 9:ONE, one, 150cm
 10:flower, flower, 159cm
-]]
+11:音街ウナ, una, 148.5cm
+12:洛天依, tianyi, 156cm
+13:重音テト, teto, 159.5cm
+14:波音リツ, ritsu, 156cm
+15:結月ゆかり, yukari, 159cm
+16:紲星あかり, akari, 151cm,
+17:弦巻マキ, maki, 158cm
+
+
+データは公式設定や公式公認の派生コンテンツを元にしています。多くの情報は以下のサイトを参考にしました。
+https://dic.nicovideo.jp/a/vocaloidの関連キャラクター基本イメージ一覧
+追加してほしいものがあればIssuesやPull Requestでの情報提供をお願いします。
 
 
 --track0:投影高/cm,0,1000,200
@@ -60,7 +71,7 @@ local pre_table={
     [7]={"kaito",0x2f2ff6,175,"KAITO"},
     [8]={"ia",0xefb8d3,155,"IA"},
     [9]={"one",0xff8229,150,"ONE"},
-    [10]={"flower",0xe895db,159,"flower"}
+    [10]={"flower",0xe895db,159,"flower"},
 }
 
 local index=nil
@@ -130,7 +141,7 @@ if (itiran) then
         itiran_str=itiran_str..i..":"..v[4]..", "..v[1]..", "..v[3].."cm\n"
     end
     debug_print(itiran_str) --説明欄に書くときコピペできるように
-    obj.setfont("MS UI Gothic",40,0,0xffffff)
+    obj.setfont("MS UI Gothic",40,3,0xffffff,0x0)
     obj.load("text",itiran_str)
     obj.draw(0,0,0)
 end
