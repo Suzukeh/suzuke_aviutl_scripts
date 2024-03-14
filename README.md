@@ -9,4 +9,4 @@ VLLで使うことを想定しているやつ
 
 こんたてさんがUnity用に作ったやつをAviUtlでも使いたくなったので作った。
 
-[objファイル内に説明アリ](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/%40VLL_Suzuke.obj)
+[ファイル内に説明アリ](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/%40VLL_Suzuke.obj)
