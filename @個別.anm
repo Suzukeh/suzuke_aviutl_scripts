@@ -8,32 +8,3 @@ local r=obj.track1
 local o=obj.track2
 
 obj.rz=obj.rz+dr*(obj.index-o)+r
-
-@縁取りT
---track0:サイズ,0,500,50
---track1:境界ﾎﾞｶｼ,0.1,500,2
---track2:α基準,0,254,128,1
---track3:合成量,-100,100,100
---check0:高精度,0
---dialog:色1/col,local col1=0xffffff;色2/col,local col2=0x0;距離グラデ/chk,local Lgr=0;錯覚補正/chk,local Mis=0;└色ぼかし量%,local MiV=25;└αぼかし量%,local MiA=25;ﾓｰﾄﾞ[0～2],local mode=0;
-
-require("rikky_module")
-
-local col1_ = "local col1="..col1..";"
-local col2_ = "local col2="..col2..";"
-local Lgr_  = "local Lgr="..Lgr..";"
-local Mis_  = "local Mis="..Mis..";"
-local MiV_  = "local MiV="..MiV..";"
-local MiA_  = "local MiA="..MiA..";"
-local mode_ = "local mode="..mode..";"
-local param = col1_..col2_..Lgr_..Mis_..MiV_..MiA_..mode_
-local check = 0
-if(obj.check0)then
-    check=1
-end
-
-
---rikky_module.effect(obj.index,obj.num,"アニメーション効果","name","縁取りT","track0",obj.track0+5*obj.index,"track1",obj.track1,"track2",obj.track2,"track3",obj.track3,"check0",check,"param",param)
---rikky_module.effect(obj.index,obj.num,"アニメーション効果","name","縁取りT")
-obj.effect("アニメーション効果","name","縁取りT")
---obj.effect("アニメーション効果","name","縁取りT","track0",obj.track0/zoom+5*obj.index,"track1",obj.track1/zoom,"track2",obj.track2,"track3",obj.track3,"check0",check,"param",param)
