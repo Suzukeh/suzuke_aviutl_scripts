@@ -153,7 +153,7 @@ end
 
 --プリセット一覧の描画
 if (itiran) then
-    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:名前, 小文字名, 身長\n"
+    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:名前, 小文字名, 身長, 色\n"
     local itiran_debug_str="\n番号:名前, 小文字名, 身長, 色\n"
     for i,v in ipairs(pre_table) do
         local id=string.format("%02d",i)
