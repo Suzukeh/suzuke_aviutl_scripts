@@ -18,7 +18,9 @@
 ![image](https://github.com/Suzukeh/suzuke_aviutl_scripts/assets/49985092/7f62804c-29fb-4695-86da-69f748285bc9)
 
 
+使用例
 
+https://github.com/Suzukeh/suzuke_aviutl_scripts/assets/49985092/d8bf795d-73e2-440a-8515-15e8b1d33731
 
 
 
