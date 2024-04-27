@@ -2,6 +2,7 @@
 
 @身長補助線
 --[[
+https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main
 身長のラインを描画する補助線のカスタムオブジェクトです。
 投影する高さ、キャラの身長、床の高さ、線の名前・太さ・色を設定できます。
 
@@ -37,8 +38,8 @@ miku
 
 データは公式設定や公式公認の派生コンテンツ(プロセカなど)を元にしています。多くの情報は以下のサイトを参考にしました。色はかなり雑です。
 https://dic.nicovideo.jp/a/vocaloidの関連キャラクター基本イメージ一覧
-追加してほしいものがあればIssuesやPull Requestでの情報提供をお願いします。
-個人的に連絡先を知っている場合はそれでもOK。
+追加してほしいものがあればIssuesやPull Requestでの情報提供をお願いします。その際のフォーマットはプリセット一覧を参考にしてください。
+個人的に連絡先を知っている場合はそれでもOKです。
 ]]
 
 
@@ -47,7 +48,7 @@ https://dic.nicovideo.jp/a/vocaloidの関連キャラクター基本イメージ一覧
 --track2:床高さ/cm,0,1000,0
 --track3:線幅,0,100,5
 --check0:プリセット一覧,0
---dialog:名前,local name="";色/col,local col=0x39c5bb;拡大率無視/chk,local ig_zoom=0;プリセット,local preset="";└名前/chk,local pre_name=1;└身長/chk,local pre_h=1;└色/chk,local pre_col=1;
+--dialog:名前,local name="";テキストサイズ,local t_s=100;色/col,local col=0x39c5bb;拡大率無視/chk,local ig_zoom=0;プリセット,local preset="";└名前/chk,local pre_name=1;└身長/chk,local pre_h=1;└色/chk,local pre_col=1;
 
 
 --入力値
@@ -145,7 +146,7 @@ obj.drawpoly(x0,y2,0,x1,y2,0,x1,y3,0,x0,y3,0)
 
 --線の名前の描画
 if (name~=nil) then
-    obj.setfont("MS UI Gothic",100,3,0xffffff,col)
+    obj.setfont("MS UI Gothic",t_s,3,0xffffff,col)
     obj.load("text",name)
     local xn=x0+(obj.w/zoom0)*zoom/2+w*0.01
     local yn=y0+(obj.h/zoom0)*zoom/2+h*0.01
@@ -163,7 +164,7 @@ if (itiran) then
         itiran_debug_str=itiran_debug_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, "..txt_col.."\n"
     end
     --debug_print(itiran_debug_str) --説明欄に書くときのコピペ用
-    obj.setfont("MS UI Gothic",40,3,0xffffff,0x0)
+    obj.setfont("MS UI Gothic",t_s*0.5,3,0xffffff,0x0)
     obj.load("text",itiran_str)
     obj.draw(0,0,0)
 end
