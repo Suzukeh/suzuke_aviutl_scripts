@@ -164,7 +164,7 @@ if (itiran) then
         itiran_debug_str=itiran_debug_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, "..txt_col.."\n"
     end
     --debug_print(itiran_debug_str) --説明欄に書くときのコピペ用
-    obj.setfont("MS UI Gothic",t_s*0.5,3,0xffffff,0x0)
+    obj.setfont("MS Gothic",t_s*0.5,3,0xffffff,0x0)
     obj.load("text",itiran_str)
     obj.draw(0,0,0)
 end
