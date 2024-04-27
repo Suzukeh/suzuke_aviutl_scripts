@@ -12,7 +12,7 @@
 
 |スクリプト|関連ファイル|
 |---|---|
-|@VLL_Suzuke.obj|char_height_list.csv|
+|[@VLL_Suzuke.obj](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/%40VLL_Suzuke.obj)|[char_height_list.csv](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/char_height_list.csv)|
 
 ## 各ファイルの概要
 ### @VLL_Suzuke.obj
