@@ -6,6 +6,8 @@
 以下はまだゴミ。
 > * @個別.anm
 > * @並べる.anm
+> * @色情報.anm
+> * 重力.tra
 
 ライセンスは、他に原著作者の存在するものはそれのコピーレフト、そうでないものはMITライセンスとしておきます。
 <details>
@@ -35,7 +37,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 [解説/身長補助線](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/%E8%A7%A3%E8%AA%AC/%E8%BA%AB%E9%95%B7%E8%A3%9C%E5%8A%A9%E7%B7%9A)
 
 ### 斜めブラインド_Su.anm
-timさんの[斜めブラインド(改)](https://www.nicovideo.jp/watch/sm17155254)を改変して基準の値域を大きくしました。<br>~~配布するまでもないとは思う~~
+timさんの[斜めブラインド(改)](https://www.nicovideo.jp/watch/sm17155254)を改変して基準の範囲を大きくしました。<br>~~配布するまでもないとは思う~~
 
 使い方は変えてないので元のスクリプトの解説を見てください。
 
