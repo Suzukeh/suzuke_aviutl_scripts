@@ -1,0 +1,45 @@
+--[[
+https://github.com/Suzukeh/suzuke_aviutl_scripts
+
+色情報を取得、表示するスクリプト(予定)
+
+メモ
+適当なオブジェクトに色取得を適用
+    中心座標 or オブジェクトのピクセル領域から代表した1色を取得
+        領域からの選択はいくつかの方法を用意する
+            最大値,最小値,平均値,中央値,最頻値,ランダム
+    グローバル変数color_info_suzuke[id]に格納
+        color_info_suzuke[id] = {R,G,B,A,X,Y}
+            X,Yは、中心座標取得のときと平均,中央,最頻値のときは中心座標になる。最大,最小値,ランダムのときは選択した座標になる。複数あるときはランダムに選ばれる。
+別のオブジェクトに色表示を適用
+    id指定したcolor_info_suzuke[id]の色情報を表示
+    表示方法はいくつかの方法を用意し、全て同時に使えるようにする。
+        文字表示：RGB,HSV,HEX,CMYK,輝度,アルファ
+            単位なしは負の値
+        色適用：オブジェクトに色を合成
+            合成モードは値で指定 https://scrapbox.io/aviutl/%E5%90%88%E6%88%90%E3%83%A2%E3%83%BC%E3%83%89
+        位置適用：オブジェクトの位置をX,Yに設定
+
+使用するグローバル変数
+・color_info_suzuke
+
+
+
+]]
+
+
+@色取得
+--track0:ID,1,99,1,1
+--track1:参照,0,2,0,1
+--dialog:中心,local pos_xy={0,0};
+
+
+
+--動作モードを指定
+local id =obj.track0
+local mode = obj.track1
+
+
+--グローバル変数の宣言
+color_info_suzuke = color_info_suzuke or {}
+color_info_suzuke[id] = color_info_suzuke[id] or {}
