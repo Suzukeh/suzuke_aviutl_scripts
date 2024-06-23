@@ -1,0 +1,53 @@
+--[[
+
+メモ：
+重力という名の二次関数イージングスクリプト。
+重力加速度を自動で計算する代わりに頂点到達を制御しやすい「位置モード」と、重力加速度固定で速度を指定する(移動量指定みたいな)「速度モード」を作る。
+
+上昇過程なら終点を頂点、下降過程なら始点を頂点とした移動。
+
+]]
+
+@位置
+--param:0
+
+
+
+
+
+
+@速度
+--1cm/px換算
+--重力はmm/s^2で指定する (小数が使えないため)
+--前区間終了時の位置をグローバル変数gravity_pos_suzukeに保存しておく
+--indexは文字列 layer_a_b にしたほうがいいかもしれない
+
+--param:9800
+
+local g=obj.getpoint("param")/1000.0; --m/s^2
+local id,ratio = math.modf(obj.getpoint("index"))
+local speed = obj.getpoint(id+1)
+
+local a, b = obj.getpoint("link")
+debug_print(tostring(a).." "..tostring(b))
+
+local layer = obj.layer
+gravity_pos_suzuke = gravity_pos_suzuke or {}
+gravity_pos_suzuke[layer] = gravity_pos_suzuke[layer] or {obj.ox,0}
+local st=gravity_pos_suzuke[layer][1]
+
+
+
+res=st+speed*ratio
+gravity_pos_suzuke[layer][2]=res
+debug_print(tostring(res))
+
+
+
+RAT_S=0
+if ratio==0 then
+    gravity_pos_suzuke[layer][1] = gravity_pos_suzuke[layer][2]
+    RAT_S=gravity_pos_suzuke[layer][1]
+end
+
+return res
