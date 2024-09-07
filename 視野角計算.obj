@@ -1,0 +1,196 @@
+--track0:視野角,0,180,50,0.01
+--track1:ｽｸﾘｰﾝ縦幅,0,10000,0,0.01
+--track2:距離,0,10000,0,0.01
+--track3:適用,0,100,0,0.01
+--check0:ヘルプ,0
+--dialog:対象(0~2),local mode=0;ｱｽﾍﾟｸﾄ比, local ratio_d=0;HFOV/chk,local hvfov=0;横幅/chk, local hv=0;表示/chk,local show=1;コピペ欄更新/chk,local cp=1;視野角,local d_fov=0;縦幅,local d_h=0;距離,local d_d=0;
+
+if (rikky_module == nil) then require("rikky_module") end
+
+
+if obj.check0 then
+    local help_str = [[
+    設定した条件を元に視野角を計算します。カメラに適用することもできます。
+    同様に、設定した他の値から対応する距離やスクリーン幅を求めることもできます。
+    中身は vfov = math.atan(obj.screen_w / 2 / obj.getoption("camera_param").d) * 360 / math.pi です。
+
+    <各値の説明>
+    トラックバーの値はゼロにするとデフォルト値になります。
+    [視野角]
+    垂直方向の視野角(°)。AviUtlのカメラ制御の視野角は垂直FOVです。
+    初期値はカメラ制御で視野角0にしたときに適用される視野角です。
+    [スクリーン縦幅]
+    画面の縦幅(px)。初期値はシーンの縦幅(obj.scree_h)です。
+    [距離]
+    焦点距離。初期値はカメラ制御で視野角0にしたときに適用される1024です。
+    この焦点距離は深度ボケには関係ありません。
+    [適用]
+    カメラに視野角や距離を適用します。
+    対象に設定した値により
+    0: 計算した視野角, 1:入力された距離 2:計算した距離
+    が適用されます。スクリーン幅の適用はできません。
+    [ヘルプ]
+    出力がこの文章に切り替わります。
+
+    ダイアログの「視野角」「距離」「スクリーン縦幅」はコピペ用に出力しているだけです。
+    入力はトラックバーで行ってください。
+    [対象]
+    計算で求めるパラメータを選択します。
+    選択したパラメータのトラックバーで設定された値は使用されなくなります。
+    0: 視野角, 1: スクリーン縦幅, 2: 距離
+    [アスペクト比]
+    画面幅の比。初期値はシーンの横縦比(obj.scree_w/obj.scree_h)です。
+    ダイアログには数式を書けるので、16:9の場合は16/9と入力することができます。
+    [HFOV]
+    チェックをつけると、トラックバーとダイアログの「視野角」を水平FOVとして扱います。
+    [横幅]
+    チェックをつけると、トラックバーとダイアログの「スクリーン縦幅」を横幅として扱います。
+    アスペクト比は 横/縦 のままです。
+    ]]
+    obj.setfont("MS Gothic", obj.screen_w * 0.03, 3, 0xffffff, 0x0)
+    obj.load("text", help_str)
+    obj.draw()
+    --return
+end
+
+local function fov_d_r(mode, fov, r, d)
+    --fov,d,rからなる直角三角形を計算する
+    index = mode + 3
+    local result = { mode, index, fov, r, d }
+    if mode == 0 then
+        result[index] = math.atan(r / 2 / d) * 360 / math.pi
+    elseif mode == 1 then
+        result[index] = r / 2 / math.tan(fov * math.pi / 360)
+    elseif mode == 2 then
+        result[index] = d * 2 * math.tan(fov * math.pi / 360)
+    end
+    return result
+end
+
+
+
+-- {モード判定, インデックス,トラックバー値(縦), 値(縦), トラックバー値(横), 値(横)}
+-- トラックバーの値が0のときはデフォルト値が適用される
+--モードを持たないパラメータは {0,インデックス,トラックバー値,値}
+--インデックスはモードに沿った値が入った位置
+--モード判定済みの計算用の値がほしいときは list[list[index_point]] で取得する
+
+local index_mode = 1
+local index_point = 2
+local index_t0 = 3 --最初のトラックバー値の位置
+local index_c0 = 4 --最初の計算値の位置
+
+--焦点距離d 値は一つだけ　モードなし
+local cam = obj.getoption("camera_param")
+local d = { 0, index_c0, obj.track2, obj.track2 }
+local d_0 = 1024
+if d[index_t0] == 0 then
+    d[index_c0] = d_0
+end
+
+--アスペクト比ratio 値は一つだけ モードなし
+local h_0 = obj.screen_h
+local w_0 = obj.screen_w
+local ratio_0 = w_0 / h_0
+local ratio = { 0, index_c0, ratio_d, ratio_d }
+if ratio[index_t0] == 0 then
+    ratio[index_c0] = ratio_0
+end
+
+--幅r 縦横の2値 モードあり
+local h, w, h_tmp, w_tmp
+if hv == 0 then
+    h_tmp = obj.track1
+    h = { 0, index_c0, h_tmp, h_tmp }
+    if h[index_t0] == 0 then
+        h[index_c0] = h_0
+    end
+    w_tmp = h[index_c0] / ratio[ratio[index_point]]
+    w = { 0, index_c0, w_tmp, w_tmp }
+else
+    w_tmp = obj.track1
+    w = { 0, index_c0, w_tmp, w_tmp }
+    if w[index_t0] == 0 then
+        w[index_c0] = w_0
+    end
+    h_tmp = w[index_c0] * ratio[ratio[index_point]]
+    h = { 0, index_c0, h_tmp, h_tmp }
+end
+
+local r = { hv, index_c0 + hv * 2, h[index_t0], h[index_c0], w[index_t0], w[index_c0] }
+
+--視野角fov 縦横の2値 モードあり
+--TODO:vfov,hfovのときそれぞれh,wを使って計算するように修正
+local vfov_0 = math.atan(w_0 / 2 / d_0) * 360 / math.pi
+local hfov_0 = math.atan(h_0 / 2 / d_0) * 360 / math.pi
+local vfov, hfov
+if hvfov == 0 then
+    vfov = { 0, index_c0, obj.track0, obj.track0 }
+    if vfov[index_t0] == 0 then
+        vfov[index_c0] = vfov_0
+    end
+    hfov = { 0, index_c0, vfov[index_c0] * ratio[index_c0], vfov[index_c0] * ratio[index_c0] }
+else
+    hfov = { 0, index_c0, obj.track0, obj.track0 }
+    if hfov[index_t0] == 0 then
+        hfov[index_c0] = hfov_0
+    end
+    vfov = { 0, hfov[index_c0] / ratio[index_c0], hfov[index_c0] / ratio[index_c0] }
+end
+
+local fov = { hvfov, index_c0 + hvfov * 2, vfov[index_t0], vfov[index_c0], hfov[index_t0], hfov[index_c0] }
+
+--ここから下全部TODO
+--TODO:計算結果
+local result_c = fov_d_r(mode, fov[fov[index_point]], r[r[index_point]], d[d[index_point]])
+
+
+local message = ""
+for k, v in pairs(result) do
+    message = message .. tostring(v) .. ","
+end
+debug_print(message)
+debug_print(ratio_d)
+
+if show == 1 then
+    local mode_str = { "視野角(垂直)", "視野角(水平)", "スクリーン縦幅", "スクリーン横幅", "距離" }
+    local result_str = {}
+    for i = 1, 2 do
+        result_str[i] = string.format("%s : %f\n", mode_str[i], fov[i + 1])
+    end
+    --    local result_str = string.format("VFOV:%f, HFOV:%f\n",)
+
+    obj.setfont("MS Gothic", obj.screen_w * 0.03, 3, 0xffffff, 0x0)
+    obj.load("text", message)
+    obj.draw()
+end
+
+--[[
+if obj.track2 == 0 and obj.track3 == 0 then
+    return
+end
+
+local d = obj.track0
+local cam = obj.getoption("camera_param")
+if d == 0 then
+    d = cam.d
+end
+local h = obj.track1
+if h == 0 then
+    h = obj.screen_h
+end
+local result_FOV_s = math.atan(h / 2 / d) * 360 / math.pi
+local message = "視野角(VFOV):" .. result_FOV_s
+
+
+debug_print(message)
+
+
+debug_print(tostring(cam.d))
+if obj.track3 ~= 0 then
+    local cam = obj.getoption("camera_param")
+    cam.d = h / 2 / math.tan(result_FOV_s * math.pi / 360)
+    obj.setoption("camera_param", cam)
+end
+
+--]]
