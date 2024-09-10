@@ -54,15 +54,18 @@ if obj.check0 then
 end
 
 local function fov_d_r(mode, fov, r, d)
-    --fov,d,rからなる直角三角形を計算する
+    --fov,r,dからなる直角三角形を計算する
     index = mode + 3
     local result = { mode, index, fov, r, d }
     if mode == 0 then
+        --fovを求める
         result[index] = math.atan(r / 2 / d) * 360 / math.pi
     elseif mode == 1 then
-        result[index] = r / 2 / math.tan(fov * math.pi / 360)
+        --rを求める
+        result[index] = 2 * d * math.tan(fov * math.pi / 360)
     elseif mode == 2 then
-        result[index] = d * 2 * math.tan(fov * math.pi / 360)
+        --dを求める
+        result[index] = r / 2 / math.tan(fov * math.pi / 360)
     end
     return result
 end
@@ -80,14 +83,6 @@ local index_point = 2
 local index_t0 = 3 --最初のトラックバー値の位置
 local index_c0 = 4 --最初の計算値の位置
 
---焦点距離d 値は一つだけ　モードなし
-local cam = obj.getoption("camera_param")
-local d = { 0, index_c0, obj.track2, obj.track2 }
-local d_0 = 1024
-if d[index_t0] == 0 then
-    d[index_c0] = d_0
-end
-
 --アスペクト比ratio 値は一つだけ モードなし
 local h_0 = obj.screen_h
 local w_0 = obj.screen_w
@@ -95,6 +90,14 @@ local ratio_0 = w_0 / h_0
 local ratio = { 0, index_c0, ratio_d, ratio_d }
 if ratio[index_t0] == 0 then
     ratio[index_c0] = ratio_0
+end
+
+--焦点距離d 値は一つだけ　モードなし
+local cam = obj.getoption("camera_param")
+local d = { 0, index_c0, obj.track2, obj.track2 }
+local d_0 = 1024
+if d[index_t0] == 0 then
+    d[index_c0] = d_0
 end
 
 --幅r 縦横の2値 モードあり
@@ -121,14 +124,15 @@ local r = { hv, index_c0 + hv * 2, h[index_t0], h[index_c0], w[index_t0], w[inde
 
 --視野角fov 縦横の2値 モードあり
 --TODO:vfov,hfovのときそれぞれh,wを使って計算するように修正
-local vfov_0 = math.atan(w_0 / 2 / d_0) * 360 / math.pi
-local hfov_0 = math.atan(h_0 / 2 / d_0) * 360 / math.pi
-local vfov, hfov
+local vfov_0 = math.atan(h_0 / 2 / d_0) * 360 / math.pi
+local hfov_0 = math.atan(w_0 / 2 / d_0) * 360 / math.pi
+local vfov, hfov, vfov_tmp, hfov_tmp
 if hvfov == 0 then
     vfov = { 0, index_c0, obj.track0, obj.track0 }
     if vfov[index_t0] == 0 then
         vfov[index_c0] = vfov_0
     end
+    hfov_tmp =
     hfov = { 0, index_c0, vfov[index_c0] * ratio[index_c0], vfov[index_c0] * ratio[index_c0] }
 else
     hfov = { 0, index_c0, obj.track0, obj.track0 }
