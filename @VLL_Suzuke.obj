@@ -64,6 +64,8 @@ local zoom=zoom0*(1-ig_zoom)*zoom0+ig_zoom*1
 local h=obj.screen_h
 local w=obj.screen_w
 
+
+
 --プリセット
 --キャラを追加したい場合はchar_height_list.csvに以下のように追記する。
 --小文字名,線の色,身長,名前
@@ -91,6 +93,22 @@ for i, v in ipairs(csv_data) do
         break
     end
     pre_table[i] = {v[1], v[2], tonumber(v[3]), tonumber(v[4],16)}
+end
+
+--プリセット一覧の描画
+if (itiran) then
+    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:名前, 小文字名, 身長, 色\n"
+    local itiran_debug_str="\n番号:名前, 小文字名, 身長, 色\n"
+    for i,v in ipairs(pre_table) do
+        local id=string.format("%02d",i)
+        local txt_col=string.format("%x",v[4])
+        itiran_str=itiran_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, <#"..txt_col..">"..txt_col.."<#>\n"
+        itiran_debug_str=itiran_debug_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, "..txt_col.."\n"
+    end
+    --debug_print(itiran_debug_str) --説明欄に書くときのコピペ用
+    obj.setfont("MS Gothic",t_s*0.5,3,0xffffff,0x0)
+    obj.load("text",itiran_str)
+    obj.draw(0,0,0)
 end
 
 local index=nil
@@ -127,6 +145,8 @@ local px_cm=h/screen_h_cm
 local chara_h=chara_h_cm*px_cm
 local floor_h=floor_h_cm*px_cm
 
+obj.setoption("drawtarget","tempbuffer",w,h)
+
 --身長線の描画
 local cap=h/2-chara_h-floor_h
 
@@ -153,18 +173,7 @@ if (name~=nil) then
     obj.drawpoly(x0,y0,0,xn,y0,0,xn,yn,0,x0,yn,0)
 end
 
---プリセット一覧の描画
-if (itiran) then
-    local itiran_str="番号または小文字の名前を入力してください。\n\n番号:名前, 小文字名, 身長, 色\n"
-    local itiran_debug_str="\n番号:名前, 小文字名, 身長, 色\n"
-    for i,v in ipairs(pre_table) do
-        local id=string.format("%02d",i)
-        local txt_col=string.format("%x",v[4])
-        itiran_str=itiran_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, <#"..txt_col..">"..txt_col.."<#>\n"
-        itiran_debug_str=itiran_debug_str..id..": "..v[1]..", "..v[2]..", "..v[3].."cm, "..txt_col.."\n"
-    end
-    --debug_print(itiran_debug_str) --説明欄に書くときのコピペ用
-    obj.setfont("MS Gothic",t_s*0.5,3,0xffffff,0x0)
-    obj.load("text",itiran_str)
-    obj.draw(0,0,0)
-end
+obj.setoption("drawtarget","framebuffer")
+obj.load("tempbuffer")
+obj.effect()
+obj.draw()

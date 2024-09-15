@@ -8,3 +8,11 @@ local r=obj.track1
 local o=obj.track2
 
 obj.rz=obj.rz+dr*(obj.index-o)+r
+
+@test
+--param:p={-100,-100,100,-100,100,100,-100,100};
+obj.setanchor("p",4)
+for i=1,4 do
+	obj.load(i)
+ 	obj.draw(p[i*2-1],p[i*2])
+end

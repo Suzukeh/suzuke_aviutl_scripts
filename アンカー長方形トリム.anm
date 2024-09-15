@@ -1,0 +1,89 @@
+--track0:モード,0,2,0,1
+--track1:比,0,1000,100,0.001
+--check0:ヘルプ,0
+--dialog:座標,local pos={200,200,-200,-200};縦横比基準,local ratio_d=1;回転,local rot=0;ぼかし,local blur=0;
+
+
+if obj.check0 then
+    local help_str = [[
+    アンカーの2点を対角とした長方形でトリミングします。
+    正確には、その長方形になるように設定したマスクを適用します。
+
+    モードを1・2に切り替えると、アンカーで決めた縦幅・横幅を基準に縦横比から
+    もう一方を計算して求めた長方形でトリミングします。
+
+    <トラックバーの説明>
+    ・モード
+    長方形の形状を決定するモードを選択します。
+    0:アンカーの2点を対角とした長方形のマスク
+    1:アンカーの2点の縦幅と、縦横比から求めた横幅からなる長方形のマスク
+    2:アンカーの2点の横幅と、縦横比から求めた縦幅からなる長方形のマスク
+    ・比
+    モード1,2のときの辺の比を設定します。モード0のときは無視されます。
+    アンカーで決める辺を100%としたときの、もう一方の辺の割合を設定します。
+    ・ヘルプ
+    出力がこの文章に切り替わります。
+    <ダイアログの説明>
+    ・アンカー
+    アンカーの座標です。
+    ・縦横比基準
+    縦横比がゼロのときの縦横比を設定します。
+    この値は 縦幅 / 横幅 の値です。16:9のディスプレイと同じ縦横比を
+    設定する場合は 9/16 と入力します (ダイアログ内はluaが使える)。
+    初期値は1(正方形)です。
+    トラックバーの縦横比を-100,100にするとちょうど縦,横が消えるという
+    挙動はそのままなので、縦横比は適用率のようなイメージになります。
+    ・回転, ぼかし
+    それぞれマスクの回転とぼかしの強さを設定します。
+    回転するとアンカーと結果がずれるので注意してください。
+    ]]
+    obj.setfont("MS Gothic", obj.screen_w * 0.03, 3, 0xffffff, 0x0)
+    obj.load("text", help_str)
+    obj.draw()
+    --return
+end
+
+
+--https://github.com/Suzukeh
+
+local num = 2
+obj.setanchor("pos", num, "line")
+
+local mode = obj.track0
+local ratio_bar = obj.track1 / 100
+
+--長方形を決める
+local function rect_aviutl(h, w)
+    local ratio_rect, size_rect
+    if w > h then
+        ratio_rect = (1 - h / w) * 100
+        size_rect = w
+    else
+        ratio_rect = (1 - w / h) * 100
+        size_rect = h
+    end
+    return { ratio_rect, size_rect }
+end
+
+local w, h
+if mode == 0 then
+    w = math.abs(pos[1] - pos[3])
+    h = math.abs(pos[2] - pos[4])
+elseif mode == 1 then
+    h = math.abs(pos[2] - pos[4])
+    w = h * ratio_bar / ratio_d
+elseif mode == 2 then
+    w = math.abs(pos[1] - pos[3])
+    h = w * ratio_bar * ratio_d
+end
+local rect = rect_aviutl(h, w)
+local ratio_mask = rect[1] --マスクに適用する縦横比
+local size_mask = rect[2]  --マスクのサイズ
+
+local x, y
+x = (pos[1] + pos[3]) / 2
+y = (pos[2] + pos[4]) / 2
+
+--マスクの適用
+obj.effect("マスク", "X", x, "Y", y, "回転", rot, "サイズ", size_mask, "縦横比", ratio_mask, "ぼかし", blur)
+debug_print(size_mask)
