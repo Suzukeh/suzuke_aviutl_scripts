@@ -1,0 +1,37 @@
+--track0:非表示,0,3,1,1
+--check0:ヘルプ,0
+
+
+
+if obj.check0 then
+    local help_str = "レンダリングのときに非表示にします。\n"
+        .. "0:常に出力\n"
+        .. "1:レンダリングでは出力しない\n"
+        .. "2:プレビューでは出力しない(レンダリングでは出力)\n"
+        .. "3:常に出力しない"
+    obj.setfont("MS Gothic", obj.screen_w * 0.03, 3, 0xffffff, 0x0)
+    obj.load("text", help_str)
+    obj.draw()
+end
+
+local mode = obj.track0
+local saving = obj.getinfo("saving")
+local hide = 0
+
+if mode == 1 then
+    if saving == true then
+        hide = 1
+    end
+elseif mode == 2 then
+    if saving == false then
+        hide = 1
+    end
+elseif mode == 3 then
+    hide = 1
+end
+
+if hide == 1 then
+    obj.load("figure", "四角形", 0x0, 0) --大きさ0の図形でobjを初期化
+    obj.alpha = 0 --透明
+    obj.setoption("draw_state", true) --obj.drawを実行させない(実行済み扱いにする)
+end
