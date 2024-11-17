@@ -1,11 +1,52 @@
+@複製
+--[[
+	オリジナルの説明文↓
+    個別複製.anm
+    (C) 2021 ePi
+
+    同じイメージを個別オブジェクトにする 座標とかは全部同じ
+    個別オブジェクト制御系のスクリプトと一緒に
+    rikky_moduleがいります なんだと
+	↑
+
+	Suzukeにより次のように改変
+	・ePiさんの https://scrapbox.io/ePi5131/スクリプト設計思想 に基づき、 https://scrapbox.io/ePi5131/パラメータインジェクション を追加
+	必要かはわからないけど、とりあえず追加してみた
+]]
+--track0:n,1,100,1,1
+--dialog:_,_0=nil;
+
+local RM=require"rikky_module"
+
+_0=_0 or{}
+local n=_0[1] or obj.track0
+_0=nil
+
+local id=RM.image("g")
+RM.image("w",id)
+
+local obj2={}
+for s in ("ox oy oz rx ry rz cx cy cz alpha zoom aspect"):gmatch("%a+")do obj2[s]=obj[s]end
+for i=0,n-1 do
+    RM.effect(i,n)
+    obj.draw()
+    RM.image("r",id)
+    for s in ("ox oy oz rx ry rz cx cy cz alpha zoom aspect"):gmatch("%a+")do obj[s]=obj2[s]end
+end
+RM.image("c",id)
+
+
 @段々回転
 --track0:角度変化,-3600,3600,0
---track1:角度,-360,360,0
+--track1:基点,-360,360,0
 --track2:基準ｵﾌﾞｼﾞｪｸﾄ,-100,100,0,1
+--dialog:_,_0=nil;
 
-local dr=obj.track0
-local r=obj.track1
-local o=obj.track2
+_0=_0 or{}
+local dr=_0[1] or obj.track0
+local r=_0[2] or obj.track1
+local o=_0[3] or obj.track2
+_0=nil
 
 obj.rz=obj.rz+dr*(obj.index-o)+r
 
@@ -16,3 +57,111 @@ for i=1,4 do
 	obj.load(i)
  	obj.draw(p[i*2-1],p[i*2])
 end
+
+@段々位置
+--[[
+    実質「並べ」系と同じ
+
+]]
+--track0:位置変化,-10000,10000,0
+--track1:基点,-10000,10000,0
+--track2:基準ｵﾌﾞｼﾞｪｸﾄ,-100,100,0,1
+--dialog:_,_0=nil;
+
+--track0:個数,1,100,1,1
+--track1:間隔,-10000,10000,0
+--track2:角度,-3600,3600,0
+
+
+--dialog:回転軸,_1=0;双方向/chk,_2=0;_0=nil;
+
+_0=_0 or{}
+local n=_0[1] or obj.track0
+local a=_0[2] or obj.track1
+local dig=(_0[3] or obj.track2)+90
+
+_0=nil
+
+local dir=_1
+local bi=_2
+_1=nil;_2=nil
+
+local index=obj.index
+if bi==1 then
+    index=math.abs(index-n+1)
+end
+
+obj.ox=obj.ox+math.cos(dig*math.pi/180)*a*(obj.index-1)*()
+
+--進行中
+
+
+@ランダム位置
+--track0:強さ,-100,100,100
+--track1:X,0,10000,100
+--track2:Y,0,10000,100
+--track3:Z,0,10000,100
+--dialog:シード,_1=0;双方向(X)/chk,_2=1;双方向(Y)/chk,_3=1;双方向(Z)/chk,_4=1;_0=nil;
+
+_0=_0 or{}
+local intensity=_0[1] or obj.track0
+local x=_0[2] or obj.track1
+local y=_0[3] or obj.track2
+local z=_0[4] or obj.track3
+_0=nil
+
+local seed=_1
+local x_bi=_2
+local y_bi=_3
+local z_bi=_4
+_1=nil;_2=nil;_3=nil;_4=nil
+
+local rand=obj.randex(seed,0)
+local r_digit=100000
+local x_r=rand(0,r_digit)/r_digit
+local y_r=rand(0,r_digit)/r_digit
+local z_r=rand(0,r_digit)/r_digit
+
+x_r=(x_r-x_bi/2)*x*intensity/100
+y_r=(y_r-y_bi/2)*y*intensity/100
+z_r=(z_r-z_bi/2)*z*intensity/100
+
+obj.ox=obj.ox+x_r
+obj.oy=obj.oy+y_r
+obj.oz=obj.oz+z_r
+
+@ランダム角度
+--テストしてない
+
+--track0:強さ,-100,100,100
+--track1:X,0,360,45
+--track2:Y,0,360,45
+--track3:Z,0,360,45
+--dialog:シード,_1=0;双方向(X)/chk,_2=1;双方向(Y)/chk,_3=1;双方向(Z)/chk,_4=1;_0=nil;
+
+_0=_0 or{}
+local intensity=_0[1] or obj.track0
+local x=_0[2] or obj.track1
+local y=_0[3] or obj.track2
+local z=_0[4] or obj.track3
+_0=nil
+
+local seed=_1
+local x_bi=_2
+local y_bi=_3
+local z_bi=_4
+_1=nil;_2=nil;_3=nil;_4=nil
+
+local rand=obj.randex(seed,0)
+local r_digit=100000
+local x_r=rand(0,r_digit)/r_digit
+local y_r=rand(0,r_digit)/r_digit
+local z_r=rand(0,r_digit)/r_digit
+
+x_r=(x_r-x_bi/2)*x*intensity/100
+y_r=(y_r-y_bi/2)*y*intensity/100
+z_r=(z_r-z_bi/2)*z*intensity/100
+
+obj.rx=obj.rx+x_r
+obj.ry=obj.ry+y_r
+obj.rz=obj.rz+z_r

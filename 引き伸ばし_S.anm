@@ -1,0 +1,62 @@
+--[[
+さつきさんの「引き伸ばし@ANM2」をePiさんが改変したやつ8https://discord.com/channels/411450989040893952/494029016223711241/693681549790412862)をさらにちょい改変。
+パラメータインジェクションを追加。
+]]
+
+--track0:伸度,0,800,0
+--track1:幅[%],0.1,100,10
+--track2:基準[%],-100,100,0
+--track3:中心[%],-100,100,0
+--dialog:縦方向/chk,dir=0;幅部分を表示/chk,alp=0;_,_0=nil;
+
+local function dp(x0, y0, x1, y1, x2, y2, x3, y3, ...)
+    return obj.drawpoly(x0, y0, 0, x1, y1, 0, x2, y2, 0, x3, y3, 0, ...)
+end
+
+_0 = _0 or {}
+local t0 = _0[1] or obj.track0
+local t1 = _0[2] or obj.track1
+local t2 = _0[3] or obj.track2
+local t3 = _0[4] or obj.track3
+_0 = nil
+
+
+local w, h = obj.getpixel()
+local wd2, hd2 = w * .5, h * .5
+if (dir < 1) then
+    local natto = w * t0 * .01
+    local haba = w * t1 * .005
+    local c = (wd2 - haba) * t2 * .01
+
+    local c0 = c - haba - natto
+    local c1 = c + haba + natto
+    local x0 = -wd2 - natto
+    local x1 = wd2 + natto
+    local u0 = wd2 + c - haba
+    local u1 = wd2 + c + haba
+
+    obj.setoption("dst", "tmp", w + natto + natto, h)
+    dp(x0, -hd2, c0 + 1, -hd2, c0 + 1, hd2, x0, hd2, 0, 0, u0 + 1, 0, u0 + 1, h, 0, h)
+    dp(c1 - 1, -hd2, x1, -hd2, x1, hd2, c1 - 1, hd2, u1 - 1, 0, w, 0, w, h, u1 - 1, h)
+    dp(c0, -hd2, c1, -hd2, c1, hd2, c0, hd2, u0, 0, u1, 0, u1, h, u0, h, 1 - alp * .5)
+    obj.copybuffer("obj", "tmp")
+    obj.cx = obj.cx - natto * t3 * .01
+else
+    local natto = h * t0 * .01
+    local haba = h * t1 * .005
+    local c = (hd2 - haba) * t2 * .01
+
+    local c0 = c - haba - natto
+    local c1 = c + haba + natto
+    local y0 = -hd2 - natto
+    local y1 = hd2 + natto
+    local v0 = hd2 + c - haba
+    local v1 = hd2 + c + haba
+
+    obj.setoption("dst", "tmp", w, h + natto + natto)
+    dp(-wd2, y0, wd2, y0, wd2, c0 + 1, -wd2, c0 + 1, 0, 0, w, 0, w, v0 + 1, 0, v0 + 1)
+    dp(-wd2, c1 - 1, wd2, c1 - 1, wd2, y1, -wd2, y1, 0, v1 - 1, w, v1 - 1, w, h, 0, h)
+    dp(-wd2, c0, wd2, c0, wd2, c1, -wd2, c1, 0, v0, w, v0, w, v1, 0, v1, 1 - alp * .5)
+    obj.copybuffer("obj", "tmp")
+    obj.cy = obj.cy - natto * t3 * .01
+end
