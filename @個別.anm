@@ -101,7 +101,7 @@ obj.ox=obj.ox+math.cos(dig*math.pi/180)*a*(obj.index-1)*()
 --track1:X,0,10000,100
 --track2:Y,0,10000,100
 --track3:Z,0,10000,100
---dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;
+--dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;
 
 _0=_0 or{}
 local intensity=_0[1] or obj.track0
@@ -114,7 +114,10 @@ local seed=_1
 local x_bi=_2
 local y_bi=_3
 local z_bi=_4
-_1=nil;_2=nil;_3=nil;_4=nil
+local x_min=_5
+local y_min=_6
+local z_min=_7
+_1=nil;_2=nil;_3=nil;_4=nil;_5=nil;_6=nil;_7=nil
 
 local rand=obj.randex(seed,0)
 local r_digit=100000
@@ -122,13 +125,13 @@ local x_r=rand(0,r_digit)/r_digit
 local y_r=rand(0,r_digit)/r_digit
 local z_r=rand(0,r_digit)/r_digit
 
-x_r=(x_r-x_bi/2)*x*intensity/100
-y_r=(y_r-y_bi/2)*y*intensity/100
-z_r=(z_r-z_bi/2)*z*intensity/100
+x_r=(x_r-x_bi/2)*(x-x_min)*intensity/100
+y_r=(y_r-y_bi/2)*(y-y_min)*intensity/100
+z_r=(z_r-z_bi/2)*(z-z_min)*intensity/100
 
-obj.ox=obj.ox+x_r
-obj.oy=obj.oy+y_r
-obj.oz=obj.oz+z_r
+obj.ox=obj.ox+x_r+x_min
+obj.oy=obj.oy+y_r+y_min
+obj.oz=obj.oz+z_r+z_min
 
 @ƒ‰ƒ“ƒ_ƒ€Šp“x
 --‚Ü‚¶‚ß‚ÉƒeƒXƒg‚µ‚Ä‚È‚¢‚¯‚Ç“®‚¢‚Ä‚é‚©‚ç‚æ‚µ
@@ -137,7 +140,7 @@ obj.oz=obj.oz+z_r
 --track1:X,0,360,0
 --track2:Y,0,360,0
 --track3:Z,0,360,45
---dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;
+--dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;
 
 _0=_0 or{}
 local intensity=_0[1] or obj.track0
@@ -150,7 +153,10 @@ local seed=_1
 local x_bi=_2
 local y_bi=_3
 local z_bi=_4
-_1=nil;_2=nil;_3=nil;_4=nil
+local x_min=_5
+local y_min=_6
+local z_min=_7
+_1=nil;_2=nil;_3=nil;_4=nil;_5=nil;_6=nil;_7=nil
 
 local rand=obj.randex(seed,0)
 local r_digit=100000
@@ -158,10 +164,10 @@ local x_r=rand(0,r_digit)/r_digit
 local y_r=rand(0,r_digit)/r_digit
 local z_r=rand(0,r_digit)/r_digit
 
-x_r=(x_r-x_bi/2)*x*intensity/100
-y_r=(y_r-y_bi/2)*y*intensity/100
-z_r=(z_r-z_bi/2)*z*intensity/100
+x_r=(x_r-x_bi/2)*(x-x_min)*intensity/100
+y_r=(y_r-y_bi/2)*(y-y_min)*intensity/100
+z_r=(z_r-z_bi/2)*(z-z_min)*intensity/100
 
-obj.rx=obj.rx+x_r
-obj.ry=obj.ry+y_r
-obj.rz=obj.rz+z_r
+obj.rx=obj.rx+x_r+x_min
+obj.ry=obj.ry+y_r+y_min
+obj.rz=obj.rz+z_r+z_min
