@@ -1,0 +1,116 @@
+--[[
+    RhythmicaLyrics_Reader
+    RhythmicaLyricsで作ったlrcファイルを読み込んで50音表っぽく表示する
+    ということのPoC
+]]
+
+--check0:lrc再読込,false
+
+--いろいろ定義
+local time = obj.time       --開始フレームからの時間
+local life_ms = 1000        --図形の寿命[ms]
+local life = life_ms / 1000 --図形の寿命[s]
+
+function osdate2timetxt(d)
+    return d.hour .. ":" .. d.min .. ":" .. d.sec
+end
+
+d = os.date("*t")
+ostime = osdate2timetxt(d)
+
+
+
+--lrc時刻to秒
+local function time_to_sec(lrc_time)
+    local time_digit = {}
+    for digit in lrc_time:gmatch("%d+") do
+        table.insert(time_digit, digit)
+    end
+
+    return tonumber(time_digit[1]) * 60 + tonumber(time_digit[2]) + tonumber(time_digit[3]) / 100
+end
+
+--lrc読み込み
+lrc_data_su = lrc_data_su or {} --グローバルに定義されていればスキップ
+
+if obj.check0 then              --チェックボックスでlec再読込
+    lrc_data_su = {}
+end
+
+local file = nil
+if #lrc_data_su == 0 then
+    local path = obj.getinfo("script_path") .. "MC2.lrc"
+    file = io.open(path, "r")
+end
+
+
+if file then
+    print("lrc読み込み " .. ostime)
+    for line in file:lines() do
+        for time_alp in line:gmatch('([^%[]+)') do
+            local row = {}
+            for word in time_alp:gmatch('([^%]]+)') do
+                table.insert(row, word)
+            end
+            if #row == 2 then
+                --print(row[1] .. " " .. row[2])
+                table.insert(lrc_data_su, row) --{{"0:00.000", "あ"}, {"0:01.000", "い"}, ...,{開始}{文字}} のようになっている
+            end
+        end
+    end
+    file:close()
+end
+
+
+
+
+--[[
+for i = 1, #lrc_data_su, 1 do
+    for j = 1, #lrc_data_su[i], 1 do
+        print(lrc_data_su[i][j])
+    end
+end
+]]
+
+--元の図形を退避
+local ori_w = obj.w
+local ori_h = obj.h
+obj.copybuffer("cache:origin_su", "obj")
+
+--50音表が入るサイズのバッファを作成
+--したいところだが、小さい文字とかカタカナとか空白とかの処理が面倒なので50音に並べるのはご自分でお願いします...
+local tb50_w = obj.w * 100
+local tb50_h = obj.h * 1
+obj.setoption("drawtarget", "cache:tb50", tb50_w, tb50_h)
+
+
+--shiftjis最初のひらがなである「ぁ」(小さい「あ」)の下位2バイトを10進数に変換
+local first_l2bit = string.byte("ぁ", 2)
+
+--描画判定
+
+for i = 1, #lrc_data_su, 1 do
+    local row = lrc_data_su[i]
+
+    local ontime = time_to_sec(row[1])    --開始時間
+    local diff = time - ontime            --文字経過時間
+
+    if (diff >= 0) and (diff < life) then --寿命判定
+        --文字取得
+        local word = string.sub(row[2], 1, 2)
+        print("word: " .. word)
+        local word_l2bit = string.byte(word, 2)     --文字の下位2バイト
+        local l2bit_diff = word_l2bit - first_l2bit --「ぁ」からの差分
+        print("diff: " .. diff)
+
+        obj.copybuffer("obj", "cache:origin_su")
+        obj.draw(ori_w * l2bit_diff, 0, 0, 1, 1 - diff / life, 0, 0, 0)
+        --文字を描画
+        obj.setfont("MS UI Gothic", 30)
+        obj.load("text", word)
+        obj.draw(ori_w * l2bit_diff, 50, 0, 1, 1 - diff / life, 0, 0, 0)
+    end
+end
+
+
+obj.copybuffer("obj", "cache:tb50")

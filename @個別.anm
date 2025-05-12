@@ -91,9 +91,11 @@ if bi==1 then
     index=math.abs(index-n+1)
 end
 
-obj.ox=obj.ox+math.cos(dig*math.pi/180)*a*(obj.index-1)*()
+obj.ox=obj.ox+math.cos(dig*math.pi/180)*a*(obj.index-1)
+obj.oy=obj.oy+math.sin(dig*math.pi/180)*a*(obj.index-1)*()
+obj.oz=obj.oz+math.sin(dig*math.pi/180)*a*(obj.index-1)*()
 
---is’†
+
 
 
 @ƒ‰ƒ“ƒ_ƒ€ˆÊ’u
@@ -101,7 +103,7 @@ obj.ox=obj.ox+math.cos(dig*math.pi/180)*a*(obj.index-1)*()
 --track1:X,0,10000,100
 --track2:Y,0,10000,100
 --track3:Z,0,10000,100
---dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;
+--dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;_0=nil;
 
 _0=_0 or{}
 local intensity=_0[1] or obj.track0
@@ -140,7 +142,7 @@ obj.oz=obj.oz+z_r+z_min
 --track1:X,0,360,0
 --track2:Y,0,360,0
 --track3:Z,0,360,45
---dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;_0=nil;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;
+--dialog:ƒV[ƒh,_1=0;‘o•ûŒü(X)/chk,_2=1;‘o•ûŒü(Y)/chk,_3=1;‘o•ûŒü(Z)/chk,_4=1;Xmin,_5=0;Ymin,_6=0;Zmin,_7=0;_0=nil;
 
 _0=_0 or{}
 local intensity=_0[1] or obj.track0

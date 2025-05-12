@@ -1,0 +1,10 @@
+--[[
+単色化(T)を色選択ダイアログ使うようにしただけ
+]]
+--color:0xffffff
+
+local hex = string.format("%06x", color)
+local r = tonumber("0x" .. hex:sub(1, 2))
+local g = tonumber("0x" .. hex:sub(3, 4))
+local b = tonumber("0x" .. hex:sub(5, 6))
+obj.effect("アニメーション効果", "name", "単色化(T)@T_Color_Module", "track0", r, "track1", g, "track2", b)
