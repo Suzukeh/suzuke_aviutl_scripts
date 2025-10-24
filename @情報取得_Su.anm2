@@ -1,0 +1,52 @@
+@描画中心位置
+--[[
+    オブジェクトの位置XYZを
+    ・テキストで画面に表示
+    ・ログに出力
+    するスクリプト。
+]]
+
+--check@screen:画面表示,1
+--track@txtsize:文字サイズ,1,500,50,1
+--check@origin:元画像表示,0
+--check@log:ログ,0
+
+local pos_xyz={obj.x,obj.y,obj.z}
+local pos_o={obj.ox,obj.oy,obj.oz}
+local pos_c={obj.cx,obj.cy,obj.cz}
+
+local txt_xyz="表示基準座標　x:"..pos_xyz[1].." y:"..pos_xyz[2].." z:"..pos_xyz[3]
+local txt_o="相対座標　ox:"..pos_o[1].." oy:"..pos_o[2].." oz:"..pos_o[3]
+local txt_c="中心の相対座標　cx:"..pos_c[1].." cy:"..pos_c[2].." cz:"..pos_c[3]
+
+local showtxt=txt_xyz.."\n"..txt_o.."\n"..txt_c
+
+if(screen==1) then
+    --退避
+    obj.copybuffer("cache:origin","object")
+
+
+    --描画先を画面と同サイズのバッファに変更
+    local w=obj.screen_w
+    local h=obj.screen_h
+    obj.setoption("drawtarget","tempbuffer",w,h)
+
+    if(origin==1) then
+        obj.copybuffer("object","cache:origin")
+        obj.draw(pos_o[1]-pos_c[1],pos_o[2]-pos_c[2],pos_o[3]-pos_c[3])
+    end
+    --テキスト描画
+    obj.setfont("MS Gothic",txtsize,3,0xffffff,0x0)
+    obj.load("text",showtxt)
+    obj.draw(0,0,0)
+    --framebufferへ
+    obj.setoption("drawtarget","framebuffer")
+    obj.copybuffer("object","tempbuffer")
+    obj.draw(0,0,0)
+end
+
+
+if(log==1) then
+    debug_print(showtxt)
+end
+
