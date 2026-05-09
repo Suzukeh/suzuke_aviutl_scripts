@@ -1,0 +1,818 @@
+@ColorDetect
+
+
+--group:色検出設定,true
+--color@target_c:検出色,0xff0000
+--track@range_h:色相誤差,0,180,10,0.01
+--track@range_s:彩度誤差,0,100,10,0.01
+--track@range_v:明度誤差,0,100,10,0.01
+--check@preview:ﾏｯﾌﾟ表示,false
+--group:
+
+--group:検出調整,true
+--track@tile_size:ﾀｲﾙｻｲｽﾞ,8,255,64,1
+--track@min_dist:最小距離,0,2000,0,0.01
+--track@min_isize:島最小ｻｲｽﾞ,0,4000,0,1
+--track@max_isize:島最大ｻｲｽﾞ,0,4000,4000,1
+--track@skip_rate:ｽｷｯﾌﾟ率,0,100,0,0.01
+--track@skip_seed:乱数ｼｰﾄﾞ,0,1000,0,1
+--check@tracking:ﾄﾗｯｷﾝｸﾞ,true
+--group:
+
+--group:枠・接続線設定,true
+--track@src_trans:元画像透明度,0,100,0,0.01
+--figure@frame_fig:枠図形,四角形
+--track@frame_size:枠サイズ,0,500,100,0.01
+--track@frame_w:枠線幅,0,100,2,0.01
+--color@frame_c:枠線色,0xffffff
+--track@frame_t:枠透明度,0,100,0,0.01
+--check@link_outside:接続線を枠外のみ,false
+--track@link_w:接続線幅,0,100,1,0.01
+--color@link_c:接続線色,0xffffff
+--track@link_t:接続透明度,0,100,0,0.01
+--group:
+
+--group:ｲﾝﾌｫ表示設定,false
+--check@show_info:ｲﾝﾌｫ表示,false
+--track@info_x:位置X,-2000,2000,0,1
+--track@info_y:位置Y,-2000,2000,0,1
+--select@info_align:ﾃｷｽﾄ揃え,中央[中]=1,左寄[上]=2,中央[上]=3,右寄[上]=4,左寄[中]=5,中央[中]=6,右寄[中]=7,左寄[下]=8,中央[下]=9,右寄[下]=10
+--font@info_font:ｲﾝﾌｫﾌｫﾝﾄ,MS UI Gothic
+--track@info_size:ｲﾝﾌｫｻｲｽﾞ,1,100,16,1
+--color@info_c:ｲﾝﾌｫ色,0xffffff
+--text@info_fmt:ｲﾝﾌｫﾌｫｰﾏｯﾄ,${cx}, ${cy},${r}${g}${b}
+--check@show_guide:変数ｶﾞｲﾄﾞ表示,false
+--group:
+
+--[[pixelshader@ps_detect:
+Texture2D tex : register(t0);
+SamplerState smp : register(s0);
+
+cbuffer cb_detect : register(b0) {
+    float target_r;
+    float target_g;
+    float target_b;
+    float hue_range;
+    float sat_range;
+    float val_range;
+    float preview;
+};
+
+float3 RgbToHsv(float3 c) {
+    float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+    float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    float e = 1e-10;
+    return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+float4 ps_detect(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float4 c = tex.Sample(smp, uv);
+
+    float3 target_hsv = RgbToHsv(float3(target_r, target_g, target_b));
+    float target_hue = target_hsv.x * 360.0;
+    float3 hsv = RgbToHsv(c.rgb);
+
+    float h_diff = abs(hsv.x * 360.0 - target_hue);
+    h_diff = min(h_diff, 360.0 - h_diff);
+    float s_diff = abs(hsv.y - target_hsv.y);
+    float v_diff = abs(hsv.z - target_hsv.z);
+
+    float hit = step(h_diff, hue_range) * step(s_diff, sat_range) * step(v_diff, val_range) * step(0.01, c.a);
+
+    float4 res = c;
+    if (preview > 0.5) {
+        res = lerp(float4(c.rgb * 0.3, c.a), float4(1.0, 1.0, 1.0, c.a), hit);
+    } else {
+        res = lerp(float4(0.0, 0.0, 0.0, 0.0), float4(1.0, 1.0, 1.0, 1.0), hit);
+    }
+    return res;
+}
+]]
+
+--[[computeshader@cs_tile_aabb:
+Texture2D<float4> src_tex : register(t0);
+RWTexture2D<float4> dst_map : register(u0);
+
+cbuffer cb_pack : register(b0) {
+    float out_w;
+    float out_h;
+    float tile_sz;
+    float target_r;
+
+    float target_g;
+    float target_b;
+    float hue_range;
+    float sat_range;
+
+    float val_range;
+    float pad1;
+    float pad2;
+    float pad3;
+};
+
+float3 RgbToHsv(float3 c) {
+    float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+    float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    float e = 1e-10;
+    return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+groupshared uint group_min_x;
+groupshared uint group_max_x;
+groupshared uint group_min_y;
+groupshared uint group_max_y;
+groupshared uint group_hit;
+
+[numthreads(8, 8, 1)]
+void cs_tile_aabb(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID, uint GroupIndex : SV_GroupIndex) {
+    uint tile_x = GroupID.x * (uint)tile_sz;
+    uint tile_y = GroupID.y * (uint)tile_sz;
+
+    if (GroupIndex == 0) {
+        group_min_x = 255;
+        group_max_x = 0;
+        group_min_y = 255;
+        group_max_y = 0;
+        group_hit = 0;
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    uint local_min_x = 255;
+    uint local_max_x = 0;
+    uint local_min_y = 255;
+    uint local_max_y = 0;
+    uint local_hit = 0;
+
+    float3 target_hsv = RgbToHsv(float3(target_r, target_g, target_b));
+    float target_hue = target_hsv.x * 360.0;
+
+    for(uint ly = GroupThreadID.y; ly < (uint)tile_sz; ly += 8) {
+        for(uint lx = GroupThreadID.x; lx < (uint)tile_sz; lx += 8) {
+            uint px = tile_x + lx;
+            uint py = tile_y + ly;
+
+            if (px < (uint)out_w && py < (uint)out_h) {
+                float4 c = src_tex.Load(int3(px, py, 0));
+
+                float3 hsv = RgbToHsv(c.rgb);
+                float h_diff = abs(hsv.x * 360.0 - target_hue);
+                h_diff = min(h_diff, 360.0 - h_diff);
+                float s_diff = abs(hsv.y - target_hsv.y);
+                float v_diff = abs(hsv.z - target_hsv.z);
+
+                float hit = step(h_diff, hue_range) * step(s_diff, sat_range) * step(v_diff, val_range) * step(0.01, c.a);
+
+                if (hit > 0.5) {
+                    local_min_x = min(local_min_x, lx);
+                    local_max_x = max(local_max_x, lx);
+                    local_min_y = min(local_min_y, ly);
+                    local_max_y = max(local_max_y, ly);
+                    local_hit = 1;
+                }
+            }
+        }
+    }
+
+    if (local_hit > 0) {
+        InterlockedMin(group_min_x, local_min_x);
+        InterlockedMax(group_max_x, local_max_x);
+        InterlockedMin(group_min_y, local_min_y);
+        InterlockedMax(group_max_y, local_max_y);
+        InterlockedAdd(group_hit, 1);
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (GroupIndex == 0) {
+        if (group_hit > 0) {
+            dst_map[uint2(GroupID.x * 2, GroupID.y)] = float4((float)group_min_x / 255.0, (float)group_max_x / 255.0, 0.0, 1.0);
+            dst_map[uint2(GroupID.x * 2 + 1, GroupID.y)] = float4((float)group_min_y / 255.0, (float)group_max_y / 255.0, 0.0, 1.0);
+        } else {
+            dst_map[uint2(GroupID.x * 2, GroupID.y)] = float4(1.0, 0.0, 0.0, 1.0);
+        }
+    }
+}
+]]
+
+local orig_w = obj.w
+local orig_h = obj.h
+
+-- テキストによって元のオブジェクト中心座標が上書きされるのを防ぐため、一旦退避しておく
+local orig_cx = obj.cx
+local orig_cy = obj.cy
+
+if show_guide then
+    obj.copybuffer("tempbuffer", "object")
+    obj.setoption("drawtarget", "tempbuffer")
+    obj.clearbuffer("tempbuffer")
+
+    local font_name = info_font or "MS UI Gothic"
+    obj.setfont(font_name, info_size, 0, info_c, 0x000000)
+
+    local guide_text = "【ｲﾝﾌｫﾌｫｰﾏｯﾄ 変数ガイド】\n${id} : トラッキングID\n${cx} : 中心のX座標\n${cy} : 中心のY座標\n${area} : ボックスの面積\n${r} : 中心の赤成分(16進数)\n${g} : 中心の緑成分(16進数)\n${b} : 中心の青成分(16進数)"
+    obj.load("text", guide_text, 0, 0, 4)
+    obj.draw(0, 0)
+
+    -- 退避した座標を復元
+    obj.cx = orig_cx
+    obj.cy = orig_cy
+
+    obj.setoption("drawtarget", "framebuffer")
+    obj.copybuffer("object", "tempbuffer")
+    return
+end
+
+local t_r = math.floor(target_c / 0x10000) / 255.0
+local t_g = math.floor((target_c % 0x10000) / 0x100) / 255.0
+local t_b = (target_c % 0x100) / 255.0
+local rh = range_h
+local rs = range_s / 100.0
+local rv = range_v / 100.0
+
+obj.copybuffer("tempbuffer", "object")
+obj.copybuffer("cache:orig", "object")
+
+if preview then
+    local constants_ps = { t_r, t_g, t_b, rh, rs, rv, 1.0 }
+    obj.pixelshader("ps_detect", "object", "tempbuffer", constants_ps, "copy", "clamp")
+    return
+end
+
+local ts = math.max(8, math.min(255, math.floor(tile_size)))
+local dw = math.ceil(orig_w / ts)
+local dh = math.ceil(orig_h / ts)
+
+obj.clearbuffer("cache:map", dw * 2, dh, 0xffffff)
+
+local constants_cs = { orig_w, orig_h, ts, t_r, t_g, t_b, rh, rs, rv, 0.0, 0.0, 0.0 }
+obj.computeshader("cs_tile_aabb", {"cache:map"}, {"tempbuffer"}, constants_cs, dw, dh, 1)
+
+obj.copybuffer("object", "cache:map")
+obj.pixeloption("get", "object")
+
+local getpixel = obj.getpixel
+local rate = skip_rate
+local s_seed = math.floor(skip_seed) * 12345
+
+local pad = frame_size / 2.0
+local md = min_dist
+
+local is_tracking = tracking
+local tracker = nil
+
+if is_tracking then
+    if not _G.__ColorDetect_Tracker then _G.__ColorDetect_Tracker = {} end
+    local trk_id = obj.effect_id or obj.index or 0
+    if not _G.__ColorDetect_Tracker[trk_id] then
+        _G.__ColorDetect_Tracker[trk_id] = { last_frame = -1, boxes = {}, next_id = 1 }
+    end
+    tracker = _G.__ColorDetect_Tracker[trk_id]
+
+    if tracker.last_frame ~= obj.frame - 1 and tracker.last_frame ~= obj.frame then
+        tracker.boxes = {}
+    end
+    tracker.last_frame = obj.frame
+
+    for _, tbox in ipairs(tracker.boxes) do
+        tbox.used = false
+    end
+end
+
+local current_boxes = {}
+local next_tracker_boxes = {}
+local points = {}
+
+for j = 0, dh - 1 do
+    for i = 0, dw - 1 do
+        local r1, g1, b1 = getpixel(i * 2, j, "rgb")
+
+        if r1 < 255 then
+            local r2, g2, b2 = getpixel(i * 2 + 1, j, "rgb")
+
+            local min_x = i * ts + r1
+            local max_x = i * ts + g1
+            local min_y = j * ts + r2
+            local max_y = j * ts + g2
+
+            local isize = math.max(max_x - min_x, max_y - min_y)
+            if isize >= min_isize and isize <= max_isize then
+                local cx = (min_x + max_x) / 2.0
+                local cy = (min_y + max_y) / 2.0
+
+                local px = cx - orig_w / 2.0
+                local py = cy - orig_h / 2.0
+
+                local l = (min_x - pad) - orig_w / 2.0
+                local r_x = (max_x + pad) - orig_w / 2.0
+                local t = (min_y - pad) - orig_h / 2.0
+                local d = (max_y + pad) - orig_h / 2.0
+
+                table.insert(current_boxes, {
+                    cx = px, cy = py,
+                    l = l, r_x = r_x,
+                    t = t, d = d,
+                    isize = isize
+                })
+            end
+        end
+    end
+end
+
+for k, cbox in ipairs(current_boxes) do
+    local box_id
+    if is_tracking then
+        local best_dist = math.huge
+        local best_idx = -1
+        local search_radius = math.max(50.0, cbox.isize)
+
+        for ti, tbox in ipairs(tracker.boxes) do
+            if not tbox.used then
+                local dx = cbox.cx - tbox.cx
+                local dy = cbox.cy - tbox.cy
+                local dist = math.sqrt(dx*dx + dy*dy)
+
+                if dist < best_dist and dist < search_radius then
+                    best_dist = dist
+                    best_idx = ti
+                end
+            end
+        end
+
+        if best_idx ~= -1 then
+            box_id = tracker.boxes[best_idx].id
+            tracker.boxes[best_idx].used = true
+        else
+            box_id = tracker.next_id
+            tracker.next_id = tracker.next_id + 1
+        end
+
+        table.insert(next_tracker_boxes, {
+            cx = cbox.cx,
+            cy = cbox.cy,
+            id = box_id
+        })
+    else
+        box_id = k
+    end
+
+    cbox.id = box_id
+
+    local skip = false
+    if rate > 0.0 then
+        local r_seed = is_tracking and (box_id + s_seed) or (cbox.cx + cbox.cy * orig_w + s_seed)
+        local r_time = is_tracking and 1 or obj.frame
+        if obj.rand1(math.floor(r_seed), r_time) * 100.0 <= rate then
+            skip = true
+        end
+    end
+
+    if not skip and md > 0.0 then
+        for f = 1, #points do
+            local dx = cbox.cx - points[f].cx
+            local dy = cbox.cy - points[f].cy
+            if math.sqrt(dx*dx + dy*dy) < md then
+                skip = true
+                break
+            end
+        end
+    end
+
+    if not skip then
+        table.insert(points, cbox)
+    end
+end
+
+if is_tracking then
+    tracker.boxes = next_tracker_boxes
+end
+
+local fig_name = frame_fig or "四角形"
+local is_custom_fig = (fig_name ~= "四角形")
+local f_size = math.max(1.0, frame_size)
+
+-- バッファ破壊を防ぐため、描画ターゲットを変更する前に図形をロードしキャッシュに保持しておく
+if is_custom_fig then
+    obj.load("figure", fig_name, frame_c, f_size, frame_w)
+    obj.copybuffer("cache:fig", "object")
+end
+
+-- 描画処理
+obj.setoption("drawtarget", "tempbuffer")
+obj.clearbuffer("tempbuffer")
+
+local alpha = (100.0 - src_trans) / 100.0
+if alpha > 0.0 then
+    obj.copybuffer("object", "cache:orig")
+    obj.draw(0, 0, 0, 1, alpha)
+end
+
+if #points > 0 then
+    local polys = {}
+
+    if frame_w > 0.0 then
+        local a_col = (100.0 - frame_t) / 100.0
+
+        if is_custom_fig then
+            obj.copybuffer("object", "cache:fig")
+            for i = 1, #points do
+                local box = points[i]
+                obj.sx = (box.r_x - box.l + frame_w) / f_size
+                obj.sy = (box.d - box.t + frame_w) / f_size
+                obj.draw(box.cx, box.cy, 0, 1, a_col)
+            end
+            obj.sx = 1.0
+            obj.sy = 1.0
+        else
+            local r_col = math.floor(frame_c / 0x10000) / 255.0
+            local g_col = math.floor((frame_c % 0x10000) / 0x100) / 255.0
+            local b_col = (frame_c % 0x100) / 255.0
+            local hlw = frame_w / 2.0
+
+            local function add_rect(x0, x1, y0, y1)
+                table.insert(polys, {
+                    x0, y0, 0, x1, y0, 0, x1, y1, 0, x0, y1, 0,
+                    r_col, g_col, b_col, a_col, r_col, g_col, b_col, a_col, r_col, g_col, b_col, a_col, r_col, g_col, b_col, a_col
+                })
+            end
+
+            for i = 1, #points do
+                local box = points[i]
+                add_rect(box.l - hlw, box.r_x + hlw, box.t - hlw, box.t + hlw)
+                add_rect(box.l - hlw, box.r_x + hlw, box.d - hlw, box.d + hlw)
+                add_rect(box.l - hlw, box.l + hlw, box.t + hlw, box.d - hlw)
+                add_rect(box.r_x - hlw, box.r_x + hlw, box.t + hlw, box.d - hlw)
+            end
+        end
+    end
+
+    if link_w > 0.0 and #points > 1 then
+        local l_r = math.floor(link_c / 0x10000) / 255.0
+        local l_g = math.floor((link_c % 0x10000) / 0x100) / 255.0
+        local l_b = (link_c % 0x100) / 255.0
+        local l_a = (100.0 - link_t) / 100.0
+        local hw = link_w / 2.0
+
+        local function add_line(p1, p2)
+            local dx = p2.cx - p1.cx
+            local dy = p2.cy - p1.cy
+            local len = math.sqrt(dx*dx + dy*dy)
+
+            if len > 0 then
+                local t1 = 0
+                local t2 = 1
+
+                if link_outside then
+                    local tx1 = math.huge
+                    local ty1 = math.huge
+                    if dx > 0 then tx1 = (p1.r_x - p1.cx) / dx elseif dx < 0 then tx1 = (p1.l - p1.cx) / dx end
+                    if dy > 0 then ty1 = (p1.d - p1.cy) / dy elseif dy < 0 then ty1 = (p1.t - p1.cy) / dy end
+                    t1 = math.min(tx1, ty1)
+
+                    local tx2 = math.huge
+                    local ty2 = math.huge
+                    if dx < 0 then tx2 = (p2.r_x - p2.cx) / -dx elseif dx > 0 then tx2 = (p2.l - p2.cx) / -dx end
+                    if dy < 0 then ty2 = (p2.d - p2.cy) / -dy elseif dy > 0 then ty2 = (p2.t - p2.cy) / -dy end
+                    t2 = 1.0 - math.min(tx2, ty2)
+                end
+
+                if t1 < t2 then
+                    local nx = -dy / len * hw
+                    local ny = dx / len * hw
+                    local cx1 = p1.cx + dx * t1
+                    local cy1 = p1.cy + dy * t1
+                    local cx2 = p1.cx + dx * t2
+                    local cy2 = p1.cy + dy * t2
+
+                    table.insert(polys, {
+                        cx1 + nx, cy1 + ny, 0,
+                        cx2 + nx, cy2 + ny, 0,
+                        cx2 - nx, cy2 - ny, 0,
+                        cx1 - nx, cy1 - ny, 0,
+                        l_r, l_g, l_b, l_a, l_r, l_g, l_b, l_a, l_r, l_g, l_b, l_a, l_r, l_g, l_b, l_a
+                    })
+                end
+            end
+        end
+
+        local unvisited = {}
+        for i = 2, #points do unvisited[i] = true end
+        local curr = 1
+
+        for _ = 1, #points - 1 do
+            local best_dist = math.huge
+            local best_idx = -1
+            for i, _ in pairs(unvisited) do
+                local dx = points[curr].cx - points[i].cx
+                local dy = points[curr].cy - points[i].cy
+                local d = dx*dx + dy*dy
+                if d < best_dist then
+                    best_dist = d
+                    best_idx = i
+                end
+            end
+            if best_idx ~= -1 then
+                add_line(points[curr], points[best_idx])
+                unvisited[best_idx] = nil
+                curr = best_idx
+            else
+                break
+            end
+        end
+    end
+
+    if #polys > 0 then
+        obj.drawpoly(polys)
+    end
+
+    if show_info then
+        obj.copybuffer("object", "cache:orig")
+        obj.pixeloption("get", "object")
+        local getp = obj.getpixel
+
+        for i = 1, #points do
+            local box = points[i]
+            local px = math.max(0, math.min(orig_w - 1, math.floor(box.cx + orig_w / 2.0)))
+            local py = math.max(0, math.min(orig_h - 1, math.floor(box.cy + orig_h / 2.0)))
+            local r, g, b = getp(px, py, "rgb")
+            box.col_r = r
+            box.col_g = g
+            box.col_b = b
+        end
+
+        obj.setoption("drawtarget", "tempbuffer")
+
+        local font_name = info_font or "MS UI Gothic"
+        obj.setfont(font_name, info_size, 0, info_c, 0x000000)
+
+        local align_table = {4, 0, 1, 2, 3, 4, 5, 6, 7, 8}
+        local align_val = align_table[info_align] or 4
+
+        local fmt_base = info_fmt or "${cx}, ${cy},${r}${g}${b}"
+
+        for i = 1, #points do
+            local box = points[i]
+            local area = (box.r_x - box.l) * (box.d - box.t)
+
+            local text = fmt_base:gsub("\\n", "\n")
+            text = text:gsub("%${id}", tostring(box.id))
+            text = text:gsub("%${cx}", string.format("%.1f", box.cx))
+            text = text:gsub("%${cy}", string.format("%.1f", box.cy))
+            text = text:gsub("%${area}", string.format("%.0f", area))
+            text = text:gsub("%${r}", string.format("%02X", box.col_r))
+            text = text:gsub("%${g}", string.format("%02X", box.col_g))
+            text = text:gsub("%${b}", string.format("%02X", box.col_b))
+
+            -- 自動吸着処理を削除し、常にボックスの中心を基準とする
+            local tx, ty = box.cx, box.cy
+
+            tx = tx + info_x
+            ty = ty + info_y
+
+            obj.load("text", text, 0, 0, align_val)
+            obj.draw(tx, ty)
+        end
+    end
+end
+
+-- 退避した座標を復元
+obj.cx = orig_cx
+obj.cy = orig_cy
+
+obj.setoption("drawtarget", "framebuffer")
+obj.copybuffer("object", "tempbuffer")
+
+
+@OpticalFlow
+
+--group:設定,true
+--track@window_rad:解析半径(px),1,15,4,1
+--track@sensitivity:感度,-50.0,50.0,10.0,0.1
+--track@threshold:ノイズ閾値,0.0,0.5,0.02,0.001
+--select@view_mode:表示ﾓｰﾄﾞ=0,HSVﾏｯﾌﾟ=0,元画像合成=1,ﾍﾞｸﾄﾙｸﾞﾘｯﾄﾞ=2
+--track@grid_size:ｸﾞﾘｯﾄﾞ間隔(px),4,128,16,1
+--color@vec_color:ﾍﾞｸﾄﾙ色,0x00ff00
+--group:
+
+--[[pixelshader@ps_calc_flow:
+Texture2D tex_cur : register(t0);
+Texture2D tex_prv : register(t1);
+SamplerState smp : register(s0);
+
+cbuffer CB : register(b0) {
+    float win_rad;
+    float inv_w;
+    float inv_h;
+    float threshold;
+};
+
+// アルファ値を考慮した輝度取得
+float getLumaA(Texture2D tex, float2 uv) {
+    float4 c = tex.Sample(smp, uv);
+    return dot(c.rgb, float3(0.299, 0.587, 0.114)) * c.a;
+}
+
+float4 ps_calc_flow(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float2 texelSize = float2(inv_w, inv_h);
+    float sum_ix2 = 0.0;
+    float sum_iy2 = 0.0;
+    float sum_ixiy = 0.0;
+    float sum_ixt = 0.0;
+    float sum_iyt = 0.0;
+
+    // Lucas-Kanade法による局所領域の微分計算
+    int r = (int)win_rad;
+    for(int y = -r; y <= r; y++) {
+        for(int x = -r; x <= r; x++) {
+            float2 suv = uv + float2(x, y) * texelSize;
+
+            float l0 = getLumaA(tex_cur, suv - float2(texelSize.x, 0.0));
+            float r0 = getLumaA(tex_cur, suv + float2(texelSize.x, 0.0));
+            float t0 = getLumaA(tex_cur, suv - float2(0.0, texelSize.y));
+            float b0 = getLumaA(tex_cur, suv + float2(0.0, texelSize.y));
+
+            float cur = getLumaA(tex_cur, suv);
+            float prv = getLumaA(tex_prv, suv);
+
+            float ix = (r0 - l0) * 0.5;
+            float iy = (b0 - t0) * 0.5;
+            float it = cur - prv;
+
+            // ノイズ除去の閾値判定
+            if(abs(it) > threshold) {
+                sum_ix2 += ix * ix;
+                sum_iy2 += iy * iy;
+                sum_ixiy += ix * iy;
+                sum_ixt += ix * it;
+                sum_iyt += iy * it;
+            }
+        }
+    }
+
+    float det = sum_ix2 * sum_iy2 - sum_ixiy * sum_ixiy;
+    float2 flow = float2(0.0, 0.0);
+
+    // 逆行列を用いてベクトル(u, v)を算出（ゼロ除算回避）
+    if(det > 1e-6) {
+        float inv_det = 1.0 / det;
+        flow.x = ( sum_iy2 * (-sum_ixt) - sum_ixiy * (-sum_iyt)) * inv_det;
+        flow.y = (-sum_ixiy * (-sum_ixt) + sum_ix2 * (-sum_iyt)) * inv_det;
+    }
+
+    float mag = length(flow);
+    // 結果をバッファに書き出し（x, y, magnitude, 1.0）
+    return float4(flow.x, flow.y, mag, 1.0);
+}
+]]
+
+--[[pixelshader@ps_draw_flow:
+Texture2D tex_orig : register(t0);
+Texture2D tex_flow : register(t1);
+SamplerState smp : register(s0);
+
+cbuffer CB : register(b0) {
+    float view_mode;
+    float sensitivity;
+    float grid_size;
+    float res_w;
+
+    float res_h;
+    float col_r;
+    float col_g;
+    float col_b;
+};
+
+// HSVからRGBへの変換
+float3 hsv2rgb(float3 c) {
+    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
+}
+
+// 線分を描画するためのSDF（符号付き距離関数）
+float sdLine(float2 p, float2 a, float2 b) {
+    float2 pa = p - a, ba = b - a;
+    float h = saturate(dot(pa, ba) / dot(ba, ba));
+    return length(pa - ba * h);
+}
+
+float4 ps_draw_flow(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float4 orig = tex_orig.Sample(smp, uv);
+    float abs_sens = abs(sensitivity);
+    float sign_sens = sign(sensitivity);
+    if (sign_sens == 0.0) sign_sens = 1.0;
+
+    if (view_mode < 0.5) {
+        // 0: HSVマップ (色相で方向、明度でベクトルの大きさを表現)
+        float4 flow = tex_flow.Sample(smp, uv);
+        float mag = saturate(flow.z * abs_sens);
+        float angle = atan2(flow.y * sign_sens, flow.x * sign_sens);
+        float hue = (angle / 6.2831853) + 0.5;
+        float3 rgb = hsv2rgb(float3(hue, 1.0, mag));
+        return float4(rgb, orig.a);
+
+    } else if (view_mode < 1.5) {
+        // 1: 元画像合成 (元の画像にHSVマップを加算ブレンド風に重ねる)
+        float4 flow = tex_flow.Sample(smp, uv);
+        float mag = saturate(flow.z * abs_sens);
+        float angle = atan2(flow.y * sign_sens, flow.x * sign_sens);
+        float hue = (angle / 6.2831853) + 0.5;
+        float3 rgb = hsv2rgb(float3(hue, 1.0, mag));
+
+        float3 blend = orig.rgb + rgb * 0.8;
+        return float4(saturate(blend), orig.a);
+
+    } else {
+        // 2: ベクトルグリッド (格子状に矢印を描画)
+        float2 px = uv * float2(res_w, res_h);
+        float2 grid_px = floor(px / grid_size) * grid_size + grid_size * 0.5;
+        float2 guv = grid_px / float2(res_w, res_h);
+
+        float4 gflow = tex_flow.Sample(smp, guv);
+        float2 vec_dir = float2(gflow.x, gflow.y) * sensitivity * 2.0;
+
+        float line_dist = 999.0;
+        float mag_px = length(vec_dir);
+
+        // 動きが小さい場合は描画をスキップ
+        if(mag_px > 1.0) {
+            float2 a = grid_px;
+            float2 b = grid_px + vec_dir;
+            line_dist = sdLine(px, a, b);
+
+            // 矢印の傘を描画
+            float2 dir = vec_dir / mag_px;
+            float2 normal = float2(-dir.y, dir.x);
+            float arrow_len = min(grid_size * 0.4, mag_px * 0.5);
+            float2 head1 = b - dir * arrow_len + normal * (arrow_len * 0.6);
+            float2 head2 = b - dir * arrow_len - normal * (arrow_len * 0.6);
+
+            line_dist = min(line_dist, sdLine(px, b, head1));
+            line_dist = min(line_dist, sdLine(px, b, head2));
+        }
+
+        float3 vec_color = float3(col_r, col_g, col_b);
+        float line_alpha = smoothstep(1.5, 0.0, line_dist); // 1.5pxの滑らかな線
+
+        float3 final_c = lerp(orig.rgb, vec_color, line_alpha);
+        return float4(final_c, max(orig.a, line_alpha));
+    }
+}
+]]
+
+local orig_w, orig_h = obj.w, obj.h
+
+-- 現在のフレームの画像をキャッシュに退避
+obj.copybuffer("cache:orig", "object")
+
+-- グローバル変数を初期化（エフェクト単位で独立させるためにIDを使用）
+local id = obj.effect_id or obj.index or 0
+if not _G.__OpticalFlow_Data then _G.__OpticalFlow_Data = {} end
+local state = _G.__OpticalFlow_Data[id]
+if not state then
+    state = { last_frame = -100, w = 0, h = 0, data = nil }
+    _G.__OpticalFlow_Data[id] = state
+end
+
+local has_ref = false
+
+-- 過去のフレームを参照するためのピクセル情報を復元
+-- ※シーク等でフレームが飛んだ場合や、解像度が変わった場合は前フレームを破棄する
+if state.data and (obj.frame == state.last_frame + 1) and state.w == orig_w and state.h == orig_h then
+    obj.setoption("drawtarget", "tempbuffer", orig_w, orig_h)
+    obj.putpixeldata("tempbuffer", state.data, orig_w, orig_h, "rgba")
+    obj.copybuffer("cache:ref", "tempbuffer")
+    has_ref = true
+end
+
+-- 現在のピクセル情報を取得してグローバル変数に保存（次フレームへの持ち越し用）
+local cur_data, cur_w, cur_h = obj.getpixeldata("cache:orig", "rgba")
+state.data = cur_data
+state.w = cur_w
+state.h = cur_h
+state.last_frame = obj.frame
+
+if not has_ref then
+    -- 過去フレームがない場合（シーク時や初回など）は自身を前フレームとして扱う（動きゼロ）
+    obj.copybuffer("cache:ref", "cache:orig")
+end
+
+-- パス1: 現在フレームと前フレームを比較し、オプティカルフローを計算
+obj.setoption("drawtarget", "tempbuffer", orig_w, orig_h)
+obj.clearbuffer("tempbuffer")
+local constants1 = { window_rad, 1.0 / orig_w, 1.0 / orig_h, threshold }
+obj.pixelshader("ps_calc_flow", "tempbuffer", {"cache:orig", "cache:ref"}, constants1, "copy", "clamp")
+
+-- 計算されたフロー情報をキャッシュに退避
+obj.copybuffer("cache:flow", "tempbuffer")
+
+-- パス2: 計算されたフロー情報を用いて、指定されたモードで画面に描画
+obj.setoption("drawtarget", "framebuffer")
+local r = math.floor(vec_color / 0x10000) / 255.0
+local g = math.floor((vec_color % 0x10000) / 0x100) / 255.0
+local b = (vec_color % 0x100) / 255.0
+
+local constants2 = { view_mode, sensitivity, grid_size, orig_w, orig_h, r, g, b }
+obj.pixelshader("ps_draw_flow", "object", {"cache:orig", "cache:flow"}, constants2, "copy", "clamp")

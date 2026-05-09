@@ -1,0 +1,12 @@
+--infomation:パララックス_Su v1.0.0 by Suzuke
+--label:配置
+--track0:奥行,-5000,5000,200
+--check@chk1:XY適用,0
+--value@PI:PI,{}
+
+obj.zoom = obj.zoom * (1 + obj.oz / 1024)
+
+if chk1 then
+    obj.ox = obj.ox * (1 + obj.oz / 1024)
+    obj.oy = obj.oy * (1 + obj.oz / 1024)
+end

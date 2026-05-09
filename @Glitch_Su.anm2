@@ -1,0 +1,285 @@
+@PixelSorty
+--[[
+geminiに書いてもらった、なんかピクセルソートっぽいもの
+ほんものは実写に使うとかっこいいけど、これは幾何学模様と相性がいい
+引き伸ばしもあるよ
+]]
+
+--track@sort_from:Sort From,0,100,0,0.1
+--track@sort_to:Sort To,0,100,100,0.1
+--track@direction:Direction(1-4),1,4,1,1
+--track@stretch:Stretch,-10000,10000,0,1
+--select@sort_by:Sort By=1,Luminance(BT.601)=1,Luminance(BT.709)=2,Luminance(BT.2020)=3,RGB Average=4,RGB Product=5,RGB Minimum=6,RGB Maximum=7
+--select@color_space:Color Space=1,Linear=1,sRGB=2
+--check@stretch_both:Stretch Both,false
+--check@mask_only:Mask,false
+
+--[[computeshader@cs_bitonic:
+Texture2D<float4> tex : register(t0);
+RWTexture2D<float4> dst : register(u0);
+
+cbuffer constant0: register(b0) {
+    float width;
+    float height;
+    float k;
+    float j;
+    float sort_from;
+    float sort_to;
+    float sort_by;
+    float color_space;
+    float dir_x;
+    float dir_y;
+    float is_reverse;
+};
+
+float get_value(float3 c, float s_by, float c_space) {
+    if (c_space == 2.0) c = pow(max(c, 0.0), 2.2);
+    int type = (int)s_by;
+    if (type == 1) return dot(c, float3(0.299, 0.587, 0.114));
+    if (type == 2) return dot(c, float3(0.2126, 0.7152, 0.0722));
+    if (type == 3) return dot(c, float3(0.2627, 0.6780, 0.0593));
+    if (type == 4) return (c.r + c.g + c.b) / 3.0;
+    if (type == 5) return c.r * c.g * c.b;
+    if (type == 6) return min(min(c.r, c.g), c.b);
+    if (type == 7) return max(max(c.r, c.g), c.b);
+    return 0.0;
+}
+
+[numthreads(8, 8, 1)]
+void cs_bitonic(uint3 DTid : SV_DispatchThreadID) {
+    if (DTid.x >= (uint)width || DTid.y >= (uint)height) return;
+
+    int x = DTid.x;
+    int y = DTid.y;
+    int index = (int)(dir_x > 0.0 ? x : y);
+    int i = index;
+
+    int neighbor_i = i ^ (int)j;
+
+    int max_index = (int)(dir_x > 0.0 ? width : height);
+    if (neighbor_i >= max_index || neighbor_i < 0) {
+        dst[DTid.xy] = tex[DTid.xy];
+        return;
+    }
+
+    uint2 neighbor_pos = uint2(
+        dir_x > 0.0 ? (uint)neighbor_i : DTid.x,
+        dir_y > 0.0 ? (uint)neighbor_i : DTid.y
+    );
+
+    float4 c_center = tex[DTid.xy];
+    float4 c_neighbor = tex[neighbor_pos];
+
+    float val_center = get_value(c_center.rgb, sort_by, color_space);
+    float val_neighbor = get_value(c_neighbor.rgb, sort_by, color_space);
+
+    bool active_center = (val_center >= sort_from && val_center <= sort_to);
+    bool active_neighbor = (val_neighbor >= sort_from && val_neighbor <= sort_to);
+
+    if (!active_center || !active_neighbor) {
+        dst[DTid.xy] = c_center;
+        return;
+    }
+
+    bool ascending = ((i & (int)k) == 0);
+    if (is_reverse > 0.0) ascending = !ascending;
+
+    if (i < neighbor_i) {
+        dst[DTid.xy] = ascending ?
+            (val_center > val_neighbor ? c_neighbor : c_center) :
+            (val_center < val_neighbor ? c_neighbor : c_center);
+    } else {
+        dst[DTid.xy] = ascending ?
+            (val_center < val_neighbor ? c_neighbor : c_center) :
+            (val_center > val_neighbor ? c_neighbor : c_center);
+    }
+}
+]]
+
+--[[computeshader@cs_stretch:
+Texture2D<float4> tex : register(t0);
+RWTexture2D<float4> dst : register(u0);
+
+cbuffer constant0: register(b0) {
+    float width;
+    float height;
+    float sort_from;
+    float sort_to;
+    float sort_by;
+    float color_space;
+    float stretch;
+    float sign_x;
+    float sign_y;
+    float is_both;
+};
+
+float get_value(float3 c, float s_by, float c_space) {
+    if (c_space == 2.0) c = pow(max(c, 0.0), 2.2);
+    int type = (int)s_by;
+    if (type == 1) return dot(c, float3(0.299, 0.587, 0.114));
+    if (type == 2) return dot(c, float3(0.2126, 0.7152, 0.0722));
+    if (type == 3) return dot(c, float3(0.2627, 0.6780, 0.0593));
+    if (type == 4) return (c.r + c.g + c.b) / 3.0;
+    if (type == 5) return c.r * c.g * c.b;
+    if (type == 6) return min(min(c.r, c.g), c.b);
+    if (type == 7) return max(max(c.r, c.g), c.b);
+    return 0.0;
+}
+
+[numthreads(8, 8, 1)]
+void cs_stretch(uint3 DTid : SV_DispatchThreadID) {
+    if (DTid.x >= (uint)width || DTid.y >= (uint)height) return;
+
+    float4 c_center = tex[DTid.xy];
+    float val_center = get_value(c_center.rgb, sort_by, color_space);
+    bool active_center = (val_center >= sort_from && val_center <= sort_to);
+
+    if (active_center) {
+        dst[DTid.xy] = c_center;
+        return;
+    }
+
+    int step_x = (int)sign_x;
+    int step_y = (int)sign_y;
+    int stretch_abs = (int)abs(stretch);
+
+    // Stretchの値に応じて、優先する探索方向を決定（デフォは逆方向=-1）
+    int dir_primary = (stretch < 0.0) ? 1 : -1;
+    int dir_secondary = -dir_primary;
+
+    for (int i = 1; i <= stretch_abs; i++) {
+        // 優先方向の探索
+        int sx1 = (int)DTid.x + step_x * i * dir_primary;
+        int sy1 = (int)DTid.y + step_y * i * dir_primary;
+
+        if (sx1 >= 0 && sx1 < (int)width && sy1 >= 0 && sy1 < (int)height) {
+            float4 c1 = tex[uint2(sx1, sy1)];
+            float val1 = get_value(c1.rgb, sort_by, color_space);
+            if (val1 >= sort_from && val1 <= sort_to) {
+                dst[DTid.xy] = c1;
+                return;
+            }
+        }
+
+        // 両方向フラグがONの場合は、逆方向の探索も同時に行う
+        if (is_both > 0.5) {
+            int sx2 = (int)DTid.x + step_x * i * dir_secondary;
+            int sy2 = (int)DTid.y + step_y * i * dir_secondary;
+
+            if (sx2 >= 0 && sx2 < (int)width && sy2 >= 0 && sy2 < (int)height) {
+                float4 c2 = tex[uint2(sx2, sy2)];
+                float val2 = get_value(c2.rgb, sort_by, color_space);
+                if (val2 >= sort_from && val2 <= sort_to) {
+                    dst[DTid.xy] = c2;
+                    return;
+                }
+            }
+        }
+    }
+
+    dst[DTid.xy] = c_center;
+}
+]]
+
+--[[pixelshader@ps_mask:
+Texture2D tex : register(t0);
+SamplerState smp : register(s0);
+
+cbuffer constant0: register(b0) {
+    float sort_from;
+    float sort_to;
+    float sort_by;
+    float color_space;
+};
+
+float get_value(float3 c, float s_by, float c_space) {
+    if (c_space == 2.0) c = pow(max(c, 0.0), 2.2);
+    int type = (int)s_by;
+    if (type == 1) return dot(c, float3(0.299, 0.587, 0.114));
+    if (type == 2) return dot(c, float3(0.2126, 0.7152, 0.0722));
+    if (type == 3) return dot(c, float3(0.2627, 0.6780, 0.0593));
+    if (type == 4) return (c.r + c.g + c.b) / 3.0;
+    if (type == 5) return c.r * c.g * c.b;
+    if (type == 6) return min(min(c.r, c.g), c.b);
+    if (type == 7) return max(max(c.r, c.g), c.b);
+    return 0.0;
+}
+
+float4 ps_mask(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float4 c = tex.Sample(smp, uv);
+    float val = get_value(c.rgb, sort_by, color_space);
+    if (val >= sort_from && val <= sort_to) {
+        return c;
+    }
+    return float4(0.0, 0.0, 0.0, 0.0);
+}
+]]
+
+local s_from = sort_from / 100.0
+local s_to = sort_to / 100.0
+local s_by = sort_by
+local c_space = color_space
+local stretch_len = stretch
+local stretch_both_flag = stretch_both and 1.0 or 0.0
+
+local dir = math.floor(direction)
+local dir_x = (dir == 1 or dir == 3) and 1.0 or 0.0
+local dir_y = (dir == 2 or dir == 4) and 1.0 or 0.0
+local is_reverse = (dir == 3 or dir == 4) and 1.0 or 0.0
+
+local sign_x = 0.0
+local sign_y = 0.0
+if dir == 1 then sign_x = 1.0
+elseif dir == 2 then sign_y = 1.0
+elseif dir == 3 then sign_x = -1.0
+elseif dir == 4 then sign_y = -1.0
+end
+
+local max_len = (dir_x > 0.0) and obj.w or obj.h
+local N = 1
+while N < max_len do
+    N = N * 2
+end
+
+obj.setoption("drawtarget", "tempbuffer", obj.w, obj.h)
+
+local countX = math.ceil(obj.w / 8)
+local countY = math.ceil(obj.h / 8)
+
+local pass_count = 0
+local k = 2
+
+while k <= N do
+    local j = k / 2
+    while j >= 1 do
+        local constants = { obj.w, obj.h, k, j, s_from, s_to, s_by, c_space, dir_x, dir_y, is_reverse }
+        if pass_count % 2 == 0 then
+            obj.computeshader("cs_bitonic", {"tempbuffer"}, {"object"}, constants, countX, countY, 1)
+        else
+            obj.computeshader("cs_bitonic", {"object"}, {"tempbuffer"}, constants, countX, countY, 1)
+        end
+        pass_count = pass_count + 1
+        j = math.floor(j / 2)
+    end
+    k = k * 2
+end
+
+if pass_count % 2 == 1 then
+    obj.copybuffer("object", "tempbuffer")
+end
+
+if stretch_len ~= 0 then
+    local stretch_constants = { obj.w, obj.h, s_from, s_to, s_by, c_space, stretch_len, sign_x, sign_y, stretch_both_flag }
+    obj.computeshader("cs_stretch", {"tempbuffer"}, {"object"}, stretch_constants, countX, countY, 1)
+    obj.copybuffer("object", "tempbuffer")
+end
+
+if mask_only then
+    local mask_const = { s_from, s_to, s_by, c_space }
+    obj.pixelshader("ps_mask", "tempbuffer", "object", mask_const, "copy", "clamp")
+    obj.copybuffer("object", "tempbuffer")
+end
+
+-- スクリプト処理時間の計測とログ出力
+local time_ms = obj.getinfo("script_time")
+print("[Pixel Sort] 実行パス数: " .. pass_count .. " / 処理時間: " .. time_ms .. " ms")
