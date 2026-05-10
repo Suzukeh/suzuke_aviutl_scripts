@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"name": "Suzuke",
+			"path": "."
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.anm2": "lua",
+			"*.cam2": "lua",
+			"*.obj2": "lua",
+			"*.scn2": "lua",
+			"*.tra2": "lua",
+		},
+		"[lua]": {
+			"files.encoding": "utf8"
+		},
+		"Lua.workspace.library": [
+			"C:\\AviUtl2\\data\\Script\\lua_aviutl_definitions\\exedit.lua",
+			"C:\\AviUtl2\\data\\Script\\lua_aviutl_definitions\\aviutl2.lua"
+		],
+		"Lua.runtime.version": "LuaJIT",
+		"[cpp]": {
+			"files.encoding": "shiftjis"
+		}
+	},
+}
