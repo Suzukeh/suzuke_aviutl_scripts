@@ -1,0 +1,82 @@
+--@点滅
+--track0:時間,0,10,1,0.01
+--track1:速さ,0.1,100,10,0.1
+--track2:不規則さ,0,100,0,1
+--dialog:滑らかに点滅/chk,smooth=0;フェード/chk,fade=0;退場モード/chk,is_exit=0;
+--[[
+  点滅しながら登場（または退場）するアニメーション効果です。
+  指定した時間が経過すると完全に表示された状態になります。
+  
+  [パラメータ]
+  時間       : 点滅を続ける時間（秒）
+  速さ       : 点滅のスピード。不規則さが0の時は点滅の周波数（Hz）
+  不規則さ   : 0の時は一定間隔で点滅。1以上にするとランダムな蛍光灯のような点滅になります
+  滑らかに点滅: チェックを入れると、サイン波を使ってフワフワと点滅します
+  フェード   : 登場時は徐々に不透明度が上がり、退場時は徐々に下がります
+  退場モード : オブジェクトの終了間際に点滅して消えるようになります
+]]
+
+local t = obj.time
+local duration = obj.track0
+local speed = obj.track1
+local rand_level = obj.track2 / 100
+
+-- 退場モードの場合は、オブジェクトの終了間際で処理を行う
+local is_active = false
+local local_t = 0 -- 点滅処理用のアクティブな時間 (0 から duration まで)
+
+if is_exit == 0 then
+    -- 登場モード
+    if duration > 0 and t <= duration then
+        is_active = true
+        local_t = t
+    end
+else
+    -- 退場モード
+    local total_time = obj.totaltime
+    local start_exit_time = total_time - duration
+    if duration > 0 and t >= start_exit_time then
+        is_active = true
+        -- 退場開始時が 0、終了時が duration となるように変換
+        local_t = t - start_exit_time
+    end
+end
+
+if is_active then
+    local blink_alpha = 1
+    
+    if rand_level > 0 then
+        -- 不規則な点滅（蛍光灯のようなパカパカ）
+        local seed2 = math.floor(local_t * speed)
+        local r = obj.rand(0, 1000, obj.index, seed2) / 1000
+        if r < rand_level then
+            blink_alpha = 0
+        else
+            blink_alpha = 1
+        end
+    else
+        -- 一定間隔の点滅
+        local phase = local_t * speed * math.pi * 2
+        local wave = math.sin(phase)
+        if smooth == 1 then
+            blink_alpha = (wave + 1) / 2
+        else
+            blink_alpha = (wave > 0) and 1 or 0
+        end
+    end
+    
+    -- フェード効果（登場時はフェードイン、退場時はフェードアウト）
+    if fade == 1 then
+        local progress = local_t / duration
+        if is_exit == 0 then
+            -- 登場: 0 -> 1 に向かって不透明度が上がる
+            blink_alpha = blink_alpha * progress
+        else
+            -- 退場: 1 -> 0 に向かって不透明度が下がる
+            -- 進捗が1に近いほど不透明度が0に近づく
+            blink_alpha = blink_alpha * (1 - progress)
+        end
+    end
+    
+    obj.alpha = obj.alpha * blink_alpha
+end
