@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "plan": {
+      "model": "opencode-go/deepseek-v4-pro",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "allow"
+      }
+    },
+    "build": {
+      "model": "opencode-go/deepseek-v4-flash"
+    },
+    "coder": {
+      "mode": "subagent",
+      "description": "Planからの指示に従ってコード実装する。ファイル編集、コマンド実行、テスト実行など全ての実装作業を担当する。",
+      "model": "opencode-go/deepseek-v4-flash"
+    }
+  }
+}

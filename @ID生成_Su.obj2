@@ -1,0 +1,222 @@
+@UUID生成
+--select@id_type:ID種別=0,UUIDv4=0,NanoID=1,ULID=2,CUID=3,UUIDv7=4,ShortID=5,KSUID=6,Snowflake=7
+--track@seed:ｼｰﾄﾞ,0,100000,0,1
+--separator:表示設定
+--font@font:ﾌｫﾝﾄ,MS UI Gothic
+--track@size:文字ｻｲｽﾞ,10,200,30,1
+--color@txtcol:文字色,0xffffff
+--select@align:文字揃え=4,左寄[上]=0,中央[上]=1,右寄[上]=2,左寄[中]=3,中央[中]=4,右寄[中]=5,左寄[下]=6,中央[下]=7,右寄[下]=8
+
+local eid = obj.effect_id or obj.index or 0
+
+if not _G.__IDGen_Su then _G.__IDGen_Su = {} end
+local state = _G.__IDGen_Su[eid]
+if not state then
+    state = { cuid_counter = 0, last_type = -1, last_seed = -1, cached_id = "" }
+    _G.__IDGen_Su[eid] = state
+end
+
+-- deterministic pseudo-random (0.0〜1.0)
+local function d_rand(val)
+    return ((val * 1103515245 + 12345) % 2147483648) / 2147483648
+end
+
+-- deterministic random byte (0〜255)
+local function d_byte(offset)
+    return math.floor(d_rand(seed * 256 + (offset or 0)) * 256)
+end
+
+-- UUID v4
+local function gen_uuid()
+    local b = {}
+    for i = 1, 16 do b[i] = d_byte(i) end
+    b[7] = AND(b[7], 0x0F) + 0x40
+    b[9] = AND(b[9], 0x3F) + 0x80
+    return string.format(
+        "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8],
+        b[9], b[10], b[11], b[12], b[13], b[14], b[15], b[16]
+    )
+end
+
+-- NanoID
+local function gen_nanoid()
+    local a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+    local r = {}
+    for i = 1, 21 do
+        local n = math.floor(d_rand(seed * 512 + 100 + i) * 64) + 1
+        r[i] = a:sub(n, n)
+    end
+    return table.concat(r)
+end
+
+-- ULID
+local function gen_ulid()
+    local a = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+    local ts = math.floor(obj.time * 1000) + math.floor(obj.frame * 1000 / obj.framerate)
+    ts = ts % 281474976710656  -- 48bit (2^48)
+
+    local ts_chars = {}
+    for i = 1, 10 do
+        ts_chars[11 - i] = a:sub((ts % 32) + 1, (ts % 32) + 1)
+        ts = math.floor(ts / 32)
+    end
+
+    local rand_chars = {}
+    for i = 1, 16 do
+        local n = math.floor(d_rand(seed * 1024 + 200 + i) * 32) + 1
+        rand_chars[i] = a:sub(n, n)
+    end
+    return table.concat(ts_chars) .. table.concat(rand_chars)
+end
+
+-- CUID
+local function gen_cuid()
+    local a = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+    local function enc(num, len)
+        local r = {}
+        for i = 1, len do
+            r[len - i + 1] = a:sub((num % 36) + 1, (num % 36) + 1)
+            num = math.floor(num / 36)
+        end
+        return table.concat(r)
+    end
+
+    local ts = math.floor(obj.time * 1000) + math.floor(obj.frame * 1000 / obj.framerate)
+    local ts_str = enc(ts, 8)
+
+    state.cuid_counter = (state.cuid_counter or 0) + 1
+    local counter_str = enc(state.cuid_counter, 4)
+
+    local fp = seed
+    local fp_str = enc(fp, 4)
+
+    local rand_str = {}
+    for i = 1, 8 do
+        local n = math.floor(d_rand(seed * 2048 + 300 + i) * 36) + 1
+        rand_str[i] = a:sub(n, n)
+    end
+    return "c" .. ts_str .. counter_str .. fp_str .. table.concat(rand_str)
+end
+
+-- UUID v7 (time-ordered, 36 chars)
+local function gen_uuid7()
+    local ts = math.floor(obj.time * 1000) + math.floor(obj.frame * 1000 / obj.framerate)
+    ts = ts % 281474976710656  -- 48bit (2^48)
+    local b = {}
+    -- timestamp big-endian (48bit → 6 bytes)
+    for i = 1, 6 do
+        b[7 - i] = ts % 256
+        ts = math.floor(ts / 256)
+    end
+    -- random (80bit → 10 bytes)
+    for i = 7, 16 do
+        b[i] = d_byte(1000 + i)
+    end
+    b[7] = AND(b[7], 0x0F) + 0x70   -- version 7
+    b[9] = AND(b[9], 0x3F) + 0x80   -- variant
+    return string.format(
+        "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8],
+        b[9], b[10], b[11], b[12], b[13], b[14], b[15], b[16]
+    )
+end
+
+-- ShortID (11 chars, URL-safe, YouTube-like)
+local function gen_shortid()
+    local a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+    local r = {}
+    for i = 1, 11 do
+        local n = math.floor(d_rand(seed * 4096 + 500 + i) * 64) + 1
+        r[i] = a:sub(n, n)
+    end
+    return table.concat(r)
+end
+
+-- KSUID (27 chars, base62, 160bit, Segment.io)
+local function gen_ksuid()
+    local EPOCH = 1400000000
+    local a = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+    local bytes = {}
+    local ts = math.floor(obj.time) + math.floor(obj.frame / obj.framerate)
+    ts = ts - EPOCH
+    if ts < 0 then ts = 0 end
+    ts = ts % 4294967296  -- 32bit (2^32)
+    for i = 1, 4 do
+        bytes[5 - i] = ts % 256
+        ts = math.floor(ts / 256)
+    end
+    for i = 1, 16 do
+        bytes[4 + i] = d_byte(6000 + i)
+    end
+
+    local parts = {}
+    for w = 1, 5 do
+        local o = (w - 1) * 4
+        parts[w] = bytes[o+1] * 16777216 + bytes[o+2] * 65536 + bytes[o+3] * 256 + bytes[o+4]
+    end
+
+    local result = {}
+    local bp = 5
+    while bp > 0 do
+        local q = {}
+        local qlen = 0
+        local r = 0
+        for i = 1, bp do
+            local v = parts[i] + r * 4294967296
+            local d = math.floor(v / 62)
+            r = v % 62
+            if qlen > 0 or d ~= 0 then
+                qlen = qlen + 1
+                q[qlen] = d
+            end
+        end
+        table.insert(result, 1, a:sub(r + 1, r + 1))
+        parts = q
+        bp = qlen
+    end
+
+    local s = table.concat(result)
+    while #s < 27 do
+        s = "0" .. s
+    end
+    return s
+end
+
+-- Snowflake (~16 digits, numeric, Twitter-style)
+local function gen_snowflake()
+    local EPOCH = 1577836800000  -- 2020-01-01
+    local ts = math.floor(obj.time * 1000) + math.floor(obj.frame * 1000 / obj.framerate)
+    ts = ts - EPOCH
+    if ts < 0 then ts = 0 end
+    ts = ts % 4398046511104  -- 42 bits
+    local rand = math.floor(d_rand(seed * 32768 + 800) * 1024)  -- 10 bits
+    return tostring(ts * 1024 + rand)
+end
+
+-- ID生成（種別切替かシード変更時に再生成）
+if state.last_type ~= id_type or state.last_seed ~= seed then
+    local generators = { gen_uuid, gen_nanoid, gen_ulid, gen_cuid, gen_uuid7, gen_shortid, gen_ksuid, gen_snowflake }
+    local fn = generators[id_type + 1] or gen_uuid
+    state.cached_id = fn()
+    state.last_type = id_type
+    state.last_seed = seed
+end
+
+-- 描画
+obj.setfont(font, size, 0, txtcol, 0x000000)
+local tw, th = obj.load("text.layout", state.cached_id, 0, 0, align)
+obj.w = tw
+obj.h = th
+
+obj.setoption("drawtarget", "tempbuffer", tw, th)
+obj.clearbuffer("tempbuffer")
+
+obj.setfont(font, size, 0, txtcol, 0x000000)
+obj.load("text", state.cached_id, 0, 0, align)
+obj.draw(0, 0)
+
+obj.setoption("drawtarget", "framebuffer")
+obj.copybuffer("object", "tempbuffer")
