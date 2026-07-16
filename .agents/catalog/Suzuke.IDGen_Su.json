@@ -1,11 +1,11 @@
 {
-  "id": "Suzuke.IDGen_Su",
-  "name": "ID生成_Su",
+  "id": "Suzuke.IDgen_Su",
+  "name": "IDgen_Su",
   "type": "スクリプト",
   "summary": "8種のユニークID(UUIDv4/NanoID/ULID等)を生成するカスタムオブジェクト",
-  "description": "./md/Suzuke.IDGen_Su.md",
+  "description": "./md/Suzuke.IDgen_Su.md",
   "author": "Suzuke",
-  "repoURL": "https://github.com/Suzukeh/suzuke_aviutl_scripts",
+  "repoURL": "https://github.com/Suzukeh/IDgen_Su",
   "licenses": [
     {
       "type": "MIT",
@@ -28,7 +28,7 @@
   "images": [],
   "installer": {
     "source": {
-      "direct": "https://raw.githubusercontent.com/Suzukeh/suzuke_aviutl_scripts/main/@ID生成_Su.obj2"
+      "direct": "https://raw.githubusercontent.com/Suzukeh/IDgen_Su/main/@IDgen_Su.obj2"
     },
     "install": [
       {
@@ -36,14 +36,14 @@
       },
       {
         "action": "copy",
-        "from": "{tmp}/@ID生成_Su.obj2",
+        "from": "{tmp}/@IDgen_Su.obj2",
         "to": "{scriptsDir}"
       }
     ],
     "uninstall": [
       {
         "action": "delete",
-        "path": "{scriptsDir}/@ID生成_Su.obj2"
+        "path": "{scriptsDir}/@IDgen_Su.obj2"
       }
     ]
   },
@@ -53,7 +53,7 @@
       "release_date": "2026-07-15",
       "file": [
         {
-          "path": "{scriptsDir}/@ID生成_Su.obj2",
+          "path": "{scriptsDir}/@IDgen_Su.obj2",
           "XXH3_128": ""
         }
       ]

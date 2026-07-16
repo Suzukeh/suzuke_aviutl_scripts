@@ -9,7 +9,7 @@
 身長補助線@VLL_Suzuke.obj
 斜めブラインド_Su.anm
 Hide.anm
-ID生成_Su.obj2
+IDgen_Su (ID生成)
 ```
 
 ライセンスは、他に原著作者の存在するものはそれのコピーレフト、そうでないものはMITライセンスとしておきます。
@@ -59,8 +59,8 @@ timさんの[斜めブラインド(改)](https://www.nicovideo.jp/watch/sm171552
 レンダリング時に非表示にするアニメーション効果です。
 一応プレビュー時に非表示にするとか、常時非表示とかも設定できるようにしてあります。
 
-### @ID生成_Su.obj2
+### ID生成 (IDgen_Su)
 
 AviUtl2用カスタムオブジェクト。UUIDv4、NanoID、ULID、CUID、UUIDv7、ShortID、KSUID、Snowflake の8種類のユニークIDを生成します。
 
-[@ID生成_Su.obj2](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/%40ID%E7%94%9F%E6%88%90_Su.obj2) | [解説](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/README/ID%E7%94%9F%E6%88%90_Su)
+[@IDgen_Su.obj2](https://github.com/Suzukeh/IDgen_Su/blob/main/%40IDgen_Su.obj2) | [解説](https://github.com/Suzukeh/IDgen_Su)
