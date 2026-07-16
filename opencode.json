@@ -11,11 +11,6 @@
     },
     "build": {
       "model": "opencode-go/deepseek-v4-flash"
-    },
-    "coder": {
-      "mode": "subagent",
-      "description": "Planからの指示に従ってコード実装する。ファイル編集、コマンド実行、テスト実行など全ての実装作業を担当する。",
-      "model": "opencode-go/deepseek-v4-flash"
     }
   }
 }
