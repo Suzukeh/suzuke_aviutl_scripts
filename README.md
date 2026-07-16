@@ -59,6 +59,6 @@ timさんの[斜めブラインド(改)](https://www.nicovideo.jp/watch/sm171552
 
 ### @ID生成_Su.obj2
 
-AviUtl2用カスタムオブジェクト。UUIDv4、NanoID、ULID、CUID、UUIDv7、ShortID、KSUID、Snowflake の8種類のユニークIDを生成します。シード値で決定的に生成されるため、同じシードからは常に同じIDが出力されます。
+AviUtl2用カスタムオブジェクト。UUIDv4、NanoID、ULID、CUID、UUIDv7、ShortID、KSUID、Snowflake の8種類のユニークIDを生成します。
 
-[解説/ID生成_Su](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/README/ID%E7%94%9F%E6%88%90_Su)
+[@ID生成_Su.obj2](https://github.com/Suzukeh/suzuke_aviutl_scripts/blob/main/%40ID%E7%94%9F%E6%88%90_Su.obj2) | [解説](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/README/ID%E7%94%9F%E6%88%90_Su)
