@@ -9,6 +9,7 @@
 身長補助線@VLL_Suzuke.obj
 斜めブラインド_Su.anm
 Hide.anm
+ID生成_Su.obj2
 ```
 
 ライセンスは、他に原著作者の存在するものはそれのコピーレフト、そうでないものはMITライセンスとしておきます。
@@ -41,7 +42,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 身長がはっきりしてるボカロキャラクターはプリセットに登録してあります。
 
-[解説/身長補助線](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/%E8%A7%A3%E8%AA%AC/%E8%BA%AB%E9%95%B7%E8%A3%9C%E5%8A%A9%E7%B7%9A)
+[解説/身長補助線](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/README/%E8%BA%AB%E9%95%B7%E8%A3%9C%E5%8A%A9%E7%B7%9A)
 
 ### 斜めブラインド_Su.anm
 
@@ -55,3 +56,9 @@ timさんの[斜めブラインド(改)](https://www.nicovideo.jp/watch/sm171552
 
 レンダリング時に非表示にするアニメーション効果です。
 一応プレビュー時に非表示にするとか、常時非表示とかも設定できるようにしてあります。
+
+### @ID生成_Su.obj2
+
+AviUtl2用カスタムオブジェクト。UUIDv4、NanoID、ULID、CUID、UUIDv7、ShortID、KSUID、Snowflake の8種類のユニークIDを生成します。シード値で決定的に生成されるため、同じシードからは常に同じIDが出力されます。
+
+[解説/ID生成_Su](https://github.com/Suzukeh/suzuke_aviutl_scripts/tree/main/README/ID%E7%94%9F%E6%88%90_Su)
