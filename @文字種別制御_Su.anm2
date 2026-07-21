@@ -1,0 +1,668 @@
+@文字種別
+--infomation:文字種別制御(文字種) v2.0.0 by Suzuke
+--label:アニメーション効果
+--text@intext:テキスト,
+--track@src_layer:読取レイヤー(0=自動),0,100,0,1
+--track@fontsize:基準サイズ,1,500,50,1
+--select@fontsel:基準フォント=0,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--select@tfacesel:基準装飾=0,Normal=0,Bold=1,Italic=2,Bold Italic=3
+--color@tc:基準色,0xFFFFFF
+--color@oc:基準縁色,0x000000
+--track@gw:字間,0,200,0,1
+--track@gh:行間,0,200,0,1
+--select@align:配置=1,左=0,中央=1,右=2
+
+--group:漢字,false
+--check@kj_en:有効,false
+--select@kj_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@kj_cl:色,-1
+--track@kj_sz:サイズ,1,500,100,1
+--track@kj_rot:回転,-360,360,0,1
+--track@kj_sc:変形,10,500,100,1
+--track@kj_ox:横ずらし,-500,500,0,1
+--track@kj_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:ひらがな,false
+--check@hg_en:有効,false
+--select@hg_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@hg_cl:色,-1
+--track@hg_sz:サイズ,1,500,100,1
+--track@hg_rot:回転,-360,360,0,1
+--track@hg_sc:変形,10,500,100,1
+--track@hg_ox:横ずらし,-500,500,0,1
+--track@hg_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:カタカナ,false
+--check@kk_en:有効,false
+--select@kk_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@kk_cl:色,-1
+--track@kk_sz:サイズ,1,500,100,1
+--track@kk_rot:回転,-360,360,0,1
+--track@kk_sc:変形,10,500,100,1
+--track@kk_ox:横ずらし,-500,500,0,1
+--track@kk_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:英字,false
+--check@en_en:有効,false
+--select@en_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@en_cl:色,-1
+--track@en_sz:サイズ,1,500,100,1
+--track@en_rot:回転,-360,360,0,1
+--track@en_sc:変形,10,500,100,1
+--track@en_ox:横ずらし,-500,500,0,1
+--track@en_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:数字,false
+--check@num_en:有効,false
+--select@num_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@num_cl:色,-1
+--track@num_sz:サイズ,1,500,100,1
+--track@num_rot:回転,-360,360,0,1
+--track@num_sc:変形,10,500,100,1
+--track@num_ox:横ずらし,-500,500,0,1
+--track@num_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:その他,false
+--check@oth_en:有効,false
+--select@oth_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@oth_cl:色,-1
+--track@oth_sz:サイズ,1,500,100,1
+--track@oth_rot:回転,-360,360,0,1
+--track@oth_sc:変形,10,500,100,1
+--track@oth_ox:横ずらし,-500,500,0,1
+--track@oth_oy:縦ずらし,-500,500,0,1
+--group
+
+local text = intext or ""
+if text == "" then
+    local layer = src_layer
+    if layer <= 0 then layer = obj.layer end
+    local obj_fn, obj_sz = "", 0
+    local ok, mod = pcall(function() return obj.module("text_reader") end)
+    if ok and mod then
+        local frame = math.floor(obj.time * obj.framerate)
+        if mod.get_text_info then
+            local t, fn, sz = mod.get_text_info(layer - 1, frame)
+            if t then text = t end
+            if fn and fn ~= "" then obj_fn = fn end
+            if type(sz) == "number" and sz > 0 then obj_sz = sz end
+        elseif mod.get_text then
+            text = mod.get_text(layer - 1, frame) or ""
+        end
+    end
+end
+if text == "" then return end
+
+local font_names = {"MS Gothic", "MS UI Gothic", "Meiryo", "Yu Gothic"}
+local base_fn = (obj_fn ~= "" and obj_fn) or font_names[fontsel + 1] or "MS Gothic"
+local base_sz = (obj_sz > 0 and obj_sz) or fontsize
+
+local type_cfg = {
+    kj = {en = kj_en, fn = kj_font >= 0 and font_names[kj_font + 1] or nil, cl = kj_cl, sz = kj_sz, ro = kj_rot, sc = kj_sc, ox = kj_ox, oy = kj_oy},
+    hg = {en = hg_en, fn = hg_font >= 0 and font_names[hg_font + 1] or nil, cl = hg_cl, sz = hg_sz, ro = hg_rot, sc = hg_sc, ox = hg_ox, oy = hg_oy},
+    kk = {en = kk_en, fn = kk_font >= 0 and font_names[kk_font + 1] or nil, cl = kk_cl, sz = kk_sz, ro = kk_rot, sc = kk_sc, ox = kk_ox, oy = kk_oy},
+    en = {en = en_en, fn = en_font >= 0 and font_names[en_font + 1] or nil, cl = en_cl, sz = en_sz, ro = en_rot, sc = en_sc, ox = en_ox, oy = en_oy},
+    num = {en = num_en, fn = num_font >= 0 and font_names[num_font + 1] or nil, cl = num_cl, sz = num_sz, ro = num_rot, sc = num_sc, ox = num_ox, oy = num_oy},
+    oth = {en = oth_en, fn = oth_font >= 0 and font_names[oth_font + 1] or nil, cl = oth_cl, sz = oth_sz, ro = oth_rot, sc = oth_sc, ox = oth_ox, oy = oth_oy},
+}
+
+local function get_ctype(c)
+    local cp = string.byte(c)
+    if not cp then return "oth" end
+    if cp < 0x80 then
+        if cp == 0x0A or cp == 0x0D then return "nl" end
+        if cp >= 0x61 and cp <= 0x7A then return "en" end
+        if cp >= 0x41 and cp <= 0x5A then return "en" end
+        if cp >= 0x30 and cp <= 0x39 then return "num" end
+        return "oth"
+    end
+    if cp >= 0xC2 and cp < 0xE0 then
+        local c2 = string.byte(c, 2) or 0
+        local code = (cp - 0xC0) * 0x40 + (c2 - 0x80)
+        if code >= 0x4E00 and code <= 0x9FFF then return "kj" end
+        if code >= 0x3400 and code <= 0x4DBF then return "kj" end
+        if code >= 0x3040 and code <= 0x309F then return "hg" end
+        if code >= 0x30A0 and code <= 0x30FF then return "kk" end
+    elseif cp >= 0xE0 and cp < 0xF0 then
+        local c2, c3 = string.byte(c, 2) or 0, string.byte(c, 3) or 0
+        local code = (cp - 0xE0) * 0x1000 + (c2 - 0x80) * 0x40 + (c3 - 0x80)
+        if code >= 0x4E00 and code <= 0x9FFF then return "kj" end
+        if code >= 0x3400 and code <= 0x4DBF then return "kj" end
+        if code >= 0xF900 and code <= 0xFAFF then return "kj" end
+    elseif cp >= 0xF0 and cp < 0xF5 then
+        local c2, c3, c4 = string.byte(c, 2) or 0, string.byte(c, 3) or 0, string.byte(c, 4) or 0
+        local code = (cp - 0xF0) * 0x40000 + (c2 - 0x80) * 0x1000 + (c3 - 0x80) * 0x40 + (c4 - 0x80)
+        if code >= 0xFF66 and code <= 0xFF9F then return "kk" end
+    end
+    return "oth"
+end
+
+local parts = {}
+text = text:gsub("\\n", "\n"):gsub("\r\n", "\n"):gsub("\r", "\n")
+local chars = {}
+for uchar in string.gmatch(text, "[\1-\127\194-\244][\128-\191]*") do
+    chars[#chars + 1] = uchar
+end
+
+local i = 1
+while i <= #chars do
+    local ch = chars[i]
+    if ch == "\n" then
+        parts[#parts + 1] = "\n"
+        i = i + 1
+    else
+        local tp = get_ctype(ch)
+        local cfg = type_cfg[tp]
+        local active = cfg.en
+        local fn = (active and cfg.fn) or base_fn
+        local sz = (active and cfg.sz ~= 100 and math.floor(base_sz * cfg.sz / 100)) or nil
+        local cl = (active and cfg.cl >= 0 and string.format("%06x", cfg.cl)) or nil
+        local ro = (active and cfg.ro ~= 0 and cfg.ro) or nil
+        local sc = (active and cfg.sc ~= 100 and cfg.sc) or nil
+        local ox = (active and cfg.ox) or 0
+        local oy = (active and cfg.oy) or 0
+        local has_off = active and (cfg.ox ~= 0 or cfg.oy ~= 0)
+
+        local tags = {}
+        if fn ~= base_fn then tags[#tags + 1] = "<@" .. fn .. ">" end
+        if sz then tags[#tags + 1] = "<s" .. sz .. ">" end
+        if cl then tags[#tags + 1] = "<#" .. cl .. ">" end
+        if ro then tags[#tags + 1] = "<tr" .. ro .. ">" end
+        if sc then
+            local v = sc / 100
+            tags[#tags + 1] = "<tw" .. v .. "><th" .. v .. ">"
+        end
+        if has_off then tags[#tags + 1] = "<p+" .. ox .. ",+" .. oy .. ">" end
+
+        local batch = {ch}
+        local j = i + 1
+        while j <= #chars do
+            local nch = chars[j]
+            if nch == "\n" then break end
+            local ntp = get_ctype(nch)
+            local ncfg = type_cfg[ntp]
+            local n_active = ncfg.en
+            local n_fn = (n_active and ncfg.fn) or base_fn
+            local n_sz = (n_active and ncfg.sz ~= 100 and math.floor(base_sz * ncfg.sz / 100)) or nil
+            local n_cl = (n_active and ncfg.cl >= 0 and string.format("%06x", ncfg.cl)) or nil
+            local n_ro = (n_active and ncfg.ro ~= 0 and ncfg.ro) or nil
+            local n_sc = (n_active and ncfg.sc ~= 100 and ncfg.sc) or nil
+            local n_ox = (n_active and ncfg.ox) or 0
+            local n_oy = (n_active and ncfg.oy) or 0
+            local n_has_off = n_active and (ncfg.ox ~= 0 or ncfg.oy ~= 0)
+            if fn ~= n_fn or (sz ~= n_sz and not (sz == nil and n_sz == nil)) or (cl ~= n_cl and not (cl == nil and n_cl == nil)) or (ro ~= n_ro and not (ro == nil and n_ro == nil)) or (sc ~= n_sc and not (sc == nil and n_sc == nil)) or has_off ~= n_has_off or (has_off and (ox ~= n_ox or oy ~= n_oy)) then
+                break
+            end
+            batch[#batch + 1] = nch
+            j = j + 1
+        end
+
+        if #tags > 0 then
+            parts[#parts + 1] = table.concat(tags)
+            parts[#parts + 1] = table.concat(batch)
+            local closes = {}
+            if has_off then closes[#closes + 1] = "<p>" end
+            if sc then closes[#closes + 1] = "<tw><th>" end
+            if ro then closes[#closes + 1] = "<tr>" end
+            if cl then closes[#closes + 1] = "<#>" end
+            if sz then closes[#closes + 1] = "<s>" end
+            if fn ~= base_fn then closes[#closes + 1] = "<@>" end
+            parts[#parts + 1] = table.concat(closes)
+        else
+            parts[#parts + 1] = table.concat(batch)
+        end
+        i = j
+    end
+end
+
+local styled = "<gw" .. gw .. "><gh" .. gh .. ">" .. table.concat(parts)
+
+obj.setfont(base_fn, base_sz, tfacesel, tc, oc)
+obj.load("text", styled, 0, 0, align)
+
+
+@全角半角
+--infomation:文字種別制御(全角半角) v2.0.0 by Suzuke
+--label:アニメーション効果
+--text@intext:テキスト,
+--track@src_layer:読取レイヤー(0=自動),0,100,0,1
+--track@fontsize:基準サイズ,1,500,50,1
+--select@fontsel:基準フォント=0,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--select@tfacesel:基準装飾=0,Normal=0,Bold=1,Italic=2,Bold Italic=3
+--color@tc:基準色,0xFFFFFF
+--color@oc:基準縁色,0x000000
+--track@gw:字間,0,200,0,1
+--track@gh:行間,0,200,0,1
+--select@align:配置=1,左=0,中央=1,右=2
+
+--group:全角,false
+--check@fw_en:有効,false
+--select@fw_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@fw_cl:色,-1
+--track@fw_sz:サイズ,1,500,100,1
+--track@fw_rot:回転,-360,360,0,1
+--track@fw_sc:変形,10,500,100,1
+--track@fw_ox:横ずらし,-500,500,0,1
+--track@fw_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:半角,false
+--check@hw_en:有効,false
+--select@hw_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@hw_cl:色,-1
+--track@hw_sz:サイズ,1,500,100,1
+--track@hw_rot:回転,-360,360,0,1
+--track@hw_sc:変形,10,500,100,1
+--track@hw_ox:横ずらし,-500,500,0,1
+--track@hw_oy:縦ずらし,-500,500,0,1
+--group
+
+local text = intext or ""
+if text == "" then
+    local layer = src_layer
+    if layer <= 0 then layer = obj.layer end
+    local obj_fn, obj_sz = "", 0
+    local ok, mod = pcall(function() return obj.module("text_reader") end)
+    if ok and mod then
+        local frame = math.floor(obj.time * obj.framerate)
+        if mod.get_text_info then
+            local t, fn, sz = mod.get_text_info(layer - 1, frame)
+            if t then text = t end
+            if fn and fn ~= "" then obj_fn = fn end
+            if type(sz) == "number" and sz > 0 then obj_sz = sz end
+        elseif mod.get_text then
+            text = mod.get_text(layer - 1, frame) or ""
+        end
+    end
+end
+if text == "" then return end
+
+local font_names = {"MS Gothic", "MS UI Gothic", "Meiryo", "Yu Gothic"}
+local base_fn = (obj_fn ~= "" and obj_fn) or font_names[fontsel + 1] or "MS Gothic"
+local base_sz = (obj_sz > 0 and obj_sz) or fontsize
+
+local type_cfg = {
+    [0] = {en = hw_en, fn = hw_font >= 0 and font_names[hw_font + 1] or nil, cl = hw_cl, sz = hw_sz, ro = hw_rot, sc = hw_sc, ox = hw_ox, oy = hw_oy},
+    [1] = {en = fw_en, fn = fw_font >= 0 and font_names[fw_font + 1] or nil, cl = fw_cl, sz = fw_sz, ro = fw_rot, sc = fw_sc, ox = fw_ox, oy = fw_oy},
+}
+
+local function utf8_decode(c)
+    local cp = string.byte(c)
+    if not cp then return 0 end
+    if cp < 0x80 then return cp end
+    if cp >= 0xC2 and cp < 0xE0 then
+        return (cp - 0xC0) * 0x40 + ((string.byte(c, 2) or 0) - 0x80)
+    elseif cp >= 0xE0 and cp < 0xF0 then
+        return (cp - 0xE0) * 0x1000 + ((string.byte(c, 2) or 0) - 0x80) * 0x40 + ((string.byte(c, 3) or 0) - 0x80)
+    elseif cp >= 0xF0 and cp < 0xF5 then
+        return (cp - 0xF0) * 0x40000 + ((string.byte(c, 2) or 0) - 0x80) * 0x1000 + ((string.byte(c, 3) or 0) - 0x80) * 0x40 + ((string.byte(c, 4) or 0) - 0x80)
+    end
+    return 0
+end
+
+local function get_ctype(c)
+    local cp = string.byte(c)
+    if not cp then return 0 end
+    if cp == 0x0A or cp == 0x0D then return -1 end
+    local code = utf8_decode(c)
+    if code == 0 then return 0 end
+    if code < 0x100 then return 0 end
+    if code >= 0xFF61 and code <= 0xFFDC then return 0 end
+    return 1
+end
+
+local parts = {}
+text = text:gsub("\\n", "\n"):gsub("\r\n", "\n"):gsub("\r", "\n")
+local chars = {}
+for uchar in string.gmatch(text, "[\1-\127\194-\244][\128-\191]*") do
+    chars[#chars + 1] = uchar
+end
+
+local i = 1
+while i <= #chars do
+    local ch = chars[i]
+    if ch == "\n" then
+        parts[#parts + 1] = "\n"
+        i = i + 1
+    else
+        local tp = get_ctype(ch)
+        if tp < 0 then parts[#parts + 1] = "\n"; i = i + 1 else
+            local cfg = type_cfg[tp]
+            local active = cfg.en
+            local fn = (active and cfg.fn) or base_fn
+            local sz = (active and cfg.sz ~= 100 and math.floor(base_sz * cfg.sz / 100)) or nil
+            local cl = (active and cfg.cl >= 0 and string.format("%06x", cfg.cl)) or nil
+            local ro = (active and cfg.ro ~= 0 and cfg.ro) or nil
+            local sc = (active and cfg.sc ~= 100 and cfg.sc) or nil
+        local ox = (active and cfg.ox) or 0
+        local oy = (active and cfg.oy) or 0
+        local has_off = active and (cfg.ox ~= 0 or cfg.oy ~= 0)
+
+            local tags = {}
+            if fn ~= base_fn then tags[#tags + 1] = "<@" .. fn .. ">" end
+            if sz then tags[#tags + 1] = "<s" .. sz .. ">" end
+            if cl then tags[#tags + 1] = "<#" .. cl .. ">" end
+            if ro then tags[#tags + 1] = "<tr" .. ro .. ">" end
+            if sc then
+                local v = sc / 100
+                tags[#tags + 1] = "<tw" .. v .. "><th" .. v .. ">"
+            end
+            if has_off then tags[#tags + 1] = "<p+" .. ox .. ",+" .. oy .. ">" end
+
+            local batch = {ch}
+            local j = i + 1
+            while j <= #chars do
+                local nch = chars[j]
+                if nch == "\n" then break end
+                local ntp = get_ctype(nch)
+                if ntp < 0 then break end
+                local ncfg = type_cfg[ntp]
+                local n_active = ncfg.en
+                local n_fn = (n_active and ncfg.fn) or base_fn
+                local n_sz = (n_active and ncfg.sz ~= 100 and math.floor(base_sz * ncfg.sz / 100)) or nil
+                local n_cl = (n_active and ncfg.cl >= 0 and string.format("%06x", ncfg.cl)) or nil
+                local n_ro = (n_active and ncfg.ro ~= 0 and ncfg.ro) or nil
+                local n_sc = (n_active and ncfg.sc ~= 100 and ncfg.sc) or nil
+                local n_ox = (n_active and ncfg.ox) or 0
+                local n_oy = (n_active and ncfg.oy) or 0
+                local n_has_off = n_active and (ncfg.ox ~= 0 or ncfg.oy ~= 0)
+                if fn ~= n_fn or (sz ~= n_sz and not (sz == nil and n_sz == nil)) or (cl ~= n_cl and not (cl == nil and n_cl == nil)) or (ro ~= n_ro and not (ro == nil and n_ro == nil)) or (sc ~= n_sc and not (sc == nil and n_sc == nil)) or has_off ~= n_has_off or (has_off and (ox ~= n_ox or oy ~= n_oy)) then
+                    break
+                end
+                batch[#batch + 1] = nch
+                j = j + 1
+            end
+
+            if #tags > 0 then
+                parts[#parts + 1] = table.concat(tags)
+                parts[#parts + 1] = table.concat(batch)
+                local closes = {}
+                if has_off then closes[#closes + 1] = "<p>" end
+                if sc then closes[#closes + 1] = "<tw><th>" end
+                if ro then closes[#closes + 1] = "<tr>" end
+                if cl then closes[#closes + 1] = "<#>" end
+                if sz then closes[#closes + 1] = "<s>" end
+                if fn ~= base_fn then closes[#closes + 1] = "<@>" end
+                parts[#parts + 1] = table.concat(closes)
+            else
+                parts[#parts + 1] = table.concat(batch)
+            end
+            i = j
+        end
+    end
+end
+
+local styled = "<gw" .. gw .. "><gh" .. gh .. ">" .. table.concat(parts)
+
+obj.setfont(base_fn, base_sz, tfacesel, tc, oc)
+obj.load("text", styled, 0, 0, align)
+
+
+@範囲指定
+--infomation:文字種別制御(範囲指定) v2.0.0 by Suzuke
+--label:アニメーション効果
+--text@intext:テキスト,
+--track@src_layer:読取レイヤー(0=自動),0,100,0,1
+--track@fontsize:基準サイズ,1,500,50,1
+--select@fontsel:基準フォント=0,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--select@tfacesel:基準装飾=0,Normal=0,Bold=1,Italic=2,Bold Italic=3
+--color@tc:基準色,0xFFFFFF
+--color@oc:基準縁色,0x000000
+--track@gw:字間,0,200,0,1
+--track@gh:行間,0,200,0,1
+--select@align:配置=1,左=0,中央=1,右=2
+--check@help:ヘルプ表示,false
+
+--group:グループ1,false
+--check@r1_en:有効,false
+--string@r1_rng:範囲(Hex),
+--select@r1_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@r1_cl:色,-1
+--track@r1_sz:サイズ,1,500,100,1
+--track@r1_rot:回転,-360,360,0,1
+--track@r1_sc:変形,10,500,100,1
+--track@r1_ox:横ずらし,-500,500,0,1
+--track@r1_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:グループ2,false
+--check@r2_en:有効,false
+--string@r2_rng:範囲(Hex),
+--select@r2_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@r2_cl:色,-1
+--track@r2_sz:サイズ,1,500,100,1
+--track@r2_rot:回転,-360,360,0,1
+--track@r2_sc:変形,10,500,100,1
+--track@r2_ox:横ずらし,-500,500,0,1
+--track@r2_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:グループ3,false
+--check@r3_en:有効,false
+--string@r3_rng:範囲(Hex),
+--select@r3_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@r3_cl:色,-1
+--track@r3_sz:サイズ,1,500,100,1
+--track@r3_rot:回転,-360,360,0,1
+--track@r3_sc:変形,10,500,100,1
+--track@r3_ox:横ずらし,-500,500,0,1
+--track@r3_oy:縦ずらし,-500,500,0,1
+--group
+
+--group:グループ4,false
+--check@r4_en:有効,false
+--string@r4_rng:範囲(Hex),
+--select@r4_font:フォント=-1,基準=-1,MS Gothic=0,MS UI Gothic=1,Meiryo=2,Yu Gothic=3
+--color@r4_cl:色,-1
+--track@r4_sz:サイズ,1,500,100,1
+--track@r4_rot:回転,-360,360,0,1
+--track@r4_sc:変形,10,500,100,1
+--track@r4_ox:横ずらし,-500,500,0,1
+--track@r4_oy:縦ずらし,-500,500,0,1
+--group
+
+if help then
+    local ht = [[【使い方】
+1.空オブジェクトにこのエフェクトを適用
+2.読取レイヤーでテキスト対象を指定
+  (0=自分のレイヤー)
+  または「テキスト」欄に直接入力
+
+【範囲指定の書式】
+XXXX-YYYY, XXXX-YYYY, ... (Hex4桁)
+
+【主なUnicode範囲】
+ 英大文字: 0041-005A (A-Z)
+ 英小文字: 0061-007A (a-z)
+ 数字    : 0030-0039 (0-9)
+ 半角カナ: FF66-FF9F
+ ひらがな: 3040-309F
+ カタカナ: 30A0-30FF
+ 漢字    : 4E00-9FFF
+ 全角英大: FF21-FF3A
+ 全角数字: FF10-FF19
+
+【制御文字による設定】
+ 色:<#> サイズ:<s> フォント:<@>
+ 回転:<tr> 変形:<tw><th> 字間:<gw>
+ すべてAviUtl標準の制御文字で実現]]
+    obj.setfont("MS Gothic", 20, 0, 0xFFFFFF, 0x000000)
+    obj.load("text", ht, 0, 0)
+    return
+end
+
+local text = intext or ""
+if text == "" then
+    local layer = src_layer
+    if layer <= 0 then layer = obj.layer end
+    local obj_fn, obj_sz = "", 0
+    local ok, mod = pcall(function() return obj.module("text_reader") end)
+    if ok and mod then
+        local frame = math.floor(obj.time * obj.framerate)
+        if mod.get_text_info then
+            local t, fn, sz = mod.get_text_info(layer - 1, frame)
+            if t then text = t end
+            if fn and fn ~= "" then obj_fn = fn end
+            if type(sz) == "number" and sz > 0 then obj_sz = sz end
+        elseif mod.get_text then
+            text = mod.get_text(layer - 1, frame) or ""
+        end
+    end
+end
+if text == "" then return end
+
+local font_names = {"MS Gothic", "MS UI Gothic", "Meiryo", "Yu Gothic"}
+local base_fn = (obj_fn ~= "" and obj_fn) or font_names[fontsel + 1] or "MS Gothic"
+local base_sz = (obj_sz > 0 and obj_sz) or fontsize
+
+local grp_cfg = {}
+for i = 1, 4 do
+    local en = _G["r" .. i .. "_en"]
+    local fn = _G["r" .. i .. "_font"]
+    local cl = _G["r" .. i .. "_cl"]
+    local sz = _G["r" .. i .. "_sz"]
+    local ro = _G["r" .. i .. "_rot"]
+    local sc = _G["r" .. i .. "_sc"]
+    local rng = _G["r" .. i .. "_rng"]
+    grp_cfg[i] = {
+        en = en,
+        fn = fn >= 0 and font_names[fn + 1] or nil,
+        cl = cl, sz = sz, ro = ro, sc = sc,
+        ox = _G["r" .. i .. "_ox"], oy = _G["r" .. i .. "_oy"],
+        ranges = parse_ranges(rng),
+    }
+end
+
+local function utf8_decode(c)
+    local cp = string.byte(c)
+    if not cp then return 0 end
+    if cp < 0x80 then return cp end
+    if cp >= 0xC2 and cp < 0xE0 then
+        return (cp - 0xC0) * 0x40 + ((string.byte(c, 2) or 0) - 0x80)
+    elseif cp >= 0xE0 and cp < 0xF0 then
+        return (cp - 0xE0) * 0x1000 + ((string.byte(c, 2) or 0) - 0x80) * 0x40 + ((string.byte(c, 3) or 0) - 0x80)
+    elseif cp >= 0xF0 and cp < 0xF5 then
+        return (cp - 0xF0) * 0x40000 + ((string.byte(c, 2) or 0) - 0x80) * 0x1000 + ((string.byte(c, 3) or 0) - 0x80) * 0x40 + ((string.byte(c, 4) or 0) - 0x80)
+    end
+    return 0
+end
+
+function parse_ranges(s)
+    if not s or s == "" then return {} end
+    local ranges = {}
+    for start_s, end_s in string.gmatch(s, "([0-9A-Fa-f]+)%s*%-%s*([0-9A-Fa-f]+)") do
+        local st, en = tonumber(start_s, 16), tonumber(end_s, 16)
+        if st and en then ranges[#ranges + 1] = {st, en} end
+    end
+    return ranges
+end
+
+local function in_ranges(code, ranges)
+    for _, r in ipairs(ranges) do
+        if code >= r[1] and code <= r[2] then return true end
+    end
+    return false
+end
+
+local function get_grp(c)
+    local cp = string.byte(c)
+    if not cp then return 0 end
+    if cp == 0x0A or cp == 0x0D then return -1 end
+    local code = utf8_decode(c)
+    for i = 1, 4 do
+        local cfg = grp_cfg[i]
+        if cfg.en and in_ranges(code, cfg.ranges) then return i end
+    end
+    return 0
+end
+
+local parts = {}
+text = text:gsub("\\n", "\n"):gsub("\r\n", "\n"):gsub("\r", "\n")
+local chars = {}
+for uchar in string.gmatch(text, "[\1-\127\194-\244][\128-\191]*") do
+    chars[#chars + 1] = uchar
+end
+
+local i = 1
+while i <= #chars do
+    local ch = chars[i]
+    if ch == "\n" then
+        parts[#parts + 1] = "\n"
+        i = i + 1
+    else
+        local tp = get_grp(ch)
+        if tp < 0 then parts[#parts + 1] = "\n"; i = i + 1 else
+            local cfg = grp_cfg[tp]
+            local active = cfg and cfg.en
+            local fn = (active and cfg.fn) or base_fn
+            local sz = (active and cfg.sz ~= 100 and math.floor(base_sz * cfg.sz / 100)) or nil
+            local cl = (active and cfg.cl >= 0 and string.format("%06x", cfg.cl)) or nil
+            local ro = (active and cfg.ro ~= 0 and cfg.ro) or nil
+            local sc = (active and cfg.sc ~= 100 and cfg.sc) or nil
+        local ox = (active and cfg.ox) or 0
+        local oy = (active and cfg.oy) or 0
+        local has_off = active and (cfg.ox ~= 0 or cfg.oy ~= 0)
+
+            local tags = {}
+            if fn ~= base_fn then tags[#tags + 1] = "<@" .. fn .. ">" end
+            if sz then tags[#tags + 1] = "<s" .. sz .. ">" end
+            if cl then tags[#tags + 1] = "<#" .. cl .. ">" end
+            if ro then tags[#tags + 1] = "<tr" .. ro .. ">" end
+            if sc then
+                local v = sc / 100
+                tags[#tags + 1] = "<tw" .. v .. "><th" .. v .. ">"
+            end
+            if has_off then tags[#tags + 1] = "<p+" .. ox .. ",+" .. oy .. ">" end
+
+            local batch = {ch}
+            local j = i + 1
+            while j <= #chars do
+                local nch = chars[j]
+                if nch == "\n" then break end
+                local ntp = get_grp(nch)
+                if ntp < 0 then break end
+                local ncfg = grp_cfg[ntp]
+                local n_active = ncfg and ncfg.en
+                local n_fn = (n_active and ncfg.fn) or base_fn
+                local n_sz = (n_active and ncfg.sz ~= 100 and math.floor(base_sz * ncfg.sz / 100)) or nil
+                local n_cl = (n_active and ncfg.cl >= 0 and string.format("%06x", ncfg.cl)) or nil
+                local n_ro = (n_active and ncfg.ro ~= 0 and ncfg.ro) or nil
+                local n_sc = (n_active and ncfg.sc ~= 100 and ncfg.sc) or nil
+                local n_ox = (n_active and ncfg.ox) or 0
+                local n_oy = (n_active and ncfg.oy) or 0
+                local n_has_off = n_active and (ncfg.ox ~= 0 or ncfg.oy ~= 0)
+                if fn ~= n_fn or (sz ~= n_sz and not (sz == nil and n_sz == nil)) or (cl ~= n_cl and not (cl == nil and n_cl == nil)) or (ro ~= n_ro and not (ro == nil and n_ro == nil)) or (sc ~= n_sc and not (sc == nil and n_sc == nil)) or has_off ~= n_has_off or (has_off and (ox ~= n_ox or oy ~= n_oy)) then
+                    break
+                end
+                batch[#batch + 1] = nch
+                j = j + 1
+            end
+
+            if #tags > 0 then
+                parts[#parts + 1] = table.concat(tags)
+                parts[#parts + 1] = table.concat(batch)
+                local closes = {}
+                if has_off then closes[#closes + 1] = "<p>" end
+                if sc then closes[#closes + 1] = "<tw><th>" end
+                if ro then closes[#closes + 1] = "<tr>" end
+                if cl then closes[#closes + 1] = "<#>" end
+                if sz then closes[#closes + 1] = "<s>" end
+                if fn ~= base_fn then closes[#closes + 1] = "<@>" end
+                parts[#parts + 1] = table.concat(closes)
+            else
+                parts[#parts + 1] = table.concat(batch)
+            end
+            i = j
+        end
+    end
+end
+
+local styled = "<gw" .. gw .. "><gh" .. gh .. ">" .. table.concat(parts)
+
+obj.setfont(base_fn, base_sz, tfacesel, tc, oc)
+obj.load("text", styled, 0, 0, align)

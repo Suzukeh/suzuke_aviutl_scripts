@@ -1,0 +1,196 @@
+--information:Z変位マップ_Su v0.1.0 by Suzuke
+--label:加工
+--track@strength:強さ,-2000,2000,100,1
+--track@div_x:分割数X,1,192,32,1
+--track@div_y:分割数Y,1,192,32,1
+--trackgroup@div_x,div_y:分割数
+--select@face_mode:面モード=0,連続面=0,ブロック=1,ブロック(側面あり)=2
+--track@base:基準[%],0,100,50,0.1
+--track@blur:マップぼかし,0,100,0,0.1
+--check@culling:裏面を表示しない,true
+--check@skip_transparent:透明部分を描画しない,true
+
+if strength == 0 then
+    return
+end
+
+local w, h = obj.w, obj.h
+if w <= 0 or h <= 0 then
+    return
+end
+
+local nx = math.max(1, math.floor(div_x))
+local ny = math.max(1, math.floor(div_y))
+
+local gw, gh
+if face_mode == 0 then
+    gw, gh = nx + 1, ny + 1
+else
+    gw, gh = nx, ny
+end
+
+local sv = {
+    ox = obj.ox, oy = obj.oy, oz = obj.oz,
+    cx = obj.cx, cy = obj.cy, cz = obj.cz,
+    zoom = obj.zoom, sx = obj.sx, sy = obj.sy,
+    rx = obj.rx, ry = obj.ry, rz = obj.rz, aspect = obj.aspect,
+}
+obj.ox, obj.oy, obj.oz = 0, 0, 0
+obj.cx, obj.cy, obj.cz = 0, 0, 0
+obj.zoom, obj.sx, obj.sy = 1, 1, 1
+obj.rx, obj.ry, obj.rz, obj.aspect = 0, 0, 0, 0
+
+obj.copybuffer("cache:orig", "object")
+
+obj.setoption("drawtarget", "tempbuffer", gw, gh)
+obj.clearbuffer("tempbuffer")
+obj.drawpoly(
+    -gw / 2, -gh / 2, 0,  gw / 2, -gh / 2, 0,  gw / 2, gh / 2, 0,  -gw / 2, gh / 2, 0,
+    0, 0,  w, 0,  w, h,  0, h
+)
+obj.setoption("drawtarget", "framebuffer")
+
+obj.ox, obj.oy, obj.oz = sv.ox, sv.oy, sv.oz
+obj.cx, obj.cy, obj.cz = sv.cx, sv.cy, sv.cz
+obj.zoom, obj.sx, obj.sy = sv.zoom, sv.sx, sv.sy
+obj.rx, obj.ry, obj.rz, obj.aspect = sv.rx, sv.ry, sv.rz, sv.aspect
+
+obj.copybuffer("object", "tempbuffer")
+if blur > 0 then
+    obj.effect("ぼかし", "範囲", blur)
+end
+obj.pixeloption("get", "object")
+
+local has_alpha = pcall(function()
+    return obj.getpixel(0, 0, "rgba")
+end)
+
+local lum = {}
+local alp = {}
+for j = 0, gh - 1 do
+    local lrow, arow = {}, {}
+    for i = 0, gw - 1 do
+        local r, g, b, a
+        if has_alpha then
+            r, g, b, a = obj.getpixel(i, j, "rgba")
+            a = a or 255
+        else
+            r, g, b = obj.getpixel(i, j, "rgb")
+            a = 255
+        end
+        lrow[i + 1] = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+        arow[i + 1] = a / 255
+    end
+    lum[j + 1] = lrow
+    alp[j + 1] = arow
+end
+
+obj.copybuffer("object", "cache:orig")
+
+local base_n = base / 100
+local function to_z(l)
+    return (base_n - l) * strength
+end
+
+local ALPHA_TH = 8 / 255
+local hw, hh = w / 2, h / 2
+local polys = {}
+local walls = {}
+
+if face_mode == 0 then
+    for j = 1, ny do
+        local y0 = (j - 1) / ny * h - hh
+        local y1 = j / ny * h - hh
+        local v0 = (j - 1) / ny * h
+        local v1 = j / ny * h
+        for i = 1, nx do
+            local x0 = (i - 1) / nx * w - hw
+            local x1 = i / nx * w - hw
+            local u0 = (i - 1) / nx * w
+            local u1 = i / nx * w
+
+            local a00, a10 = alp[j][i], alp[j][i + 1]
+            local a11, a01 = alp[j + 1][i + 1], alp[j + 1][i]
+            local skip = skip_transparent
+                and a00 < ALPHA_TH and a10 < ALPHA_TH
+                and a11 < ALPHA_TH and a01 < ALPHA_TH
+
+            if not skip then
+                local z00 = (a00 < ALPHA_TH) and 0 or to_z(lum[j][i])
+                local z10 = (a10 < ALPHA_TH) and 0 or to_z(lum[j][i + 1])
+                local z11 = (a11 < ALPHA_TH) and 0 or to_z(lum[j + 1][i + 1])
+                local z01 = (a01 < ALPHA_TH) and 0 or to_z(lum[j + 1][i])
+                polys[#polys + 1] = {
+                    x0, y0, z00,  x1, y0, z10,
+                    x1, y1, z11,  x0, y1, z01,
+                    u0, v0,  u1, v0,  u1, v1,  u0, v1,
+                }
+            end
+        end
+    end
+else
+    for j = 1, ny do
+        local y0 = (j - 1) / ny * h - hh
+        local y1 = j / ny * h - hh
+        local v0 = (j - 1) / ny * h
+        local v1 = j / ny * h
+        for i = 1, nx do
+            local x0 = (i - 1) / nx * w - hw
+            local x1 = i / nx * w - hw
+            local u0 = (i - 1) / nx * w
+            local u1 = i / nx * w
+
+            local z = to_z(lum[j][i])
+            local a = alp[j][i]
+            local cell_hidden = skip_transparent and a < ALPHA_TH
+
+            if not cell_hidden then
+                polys[#polys + 1] = {
+                    x0, y0, z,  x1, y0, z,  x1, y1, z,  x0, y1, z,
+                    u0, v0,  u1, v0,  u1, v1,  u0, v1,
+                }
+            end
+
+            if face_mode == 2 then
+                if i < nx then
+                    local z2 = to_z(lum[j][i + 1])
+                    local a2 = alp[j][i + 1]
+                    local wall_skip = skip_transparent and (a < ALPHA_TH or a2 < ALPHA_TH)
+                    if math.abs(z - z2) > 0.5 and not wall_skip then
+                        local ue = (z < z2) and (u1 - 0.5) or (u1 + 0.5)
+                        walls[#walls + 1] = {
+                            x1, y0, z,  x1, y1, z,  x1, y1, z2,  x1, y0, z2,
+                            ue, v0,  ue, v1,  ue, v1,  ue, v0,
+                        }
+                    end
+                end
+                if j < ny then
+                    local z3 = to_z(lum[j + 1][i])
+                    local a3 = alp[j + 1][i]
+                    local wall_skip = skip_transparent and (a < ALPHA_TH or a3 < ALPHA_TH)
+                    if math.abs(z - z3) > 0.5 and not wall_skip then
+                        local ve = (z < z3) and (v1 - 0.5) or (v1 + 0.5)
+                        walls[#walls + 1] = {
+                            x0, y1, z,  x1, y1, z,  x1, y1, z3,  x0, y1, z3,
+                            u0, ve,  u1, ve,  u1, ve,  u0, ve,
+                        }
+                    end
+                end
+            end
+        end
+    end
+end
+
+obj.setoption("culling", culling and 1 or 0)
+if #polys > 0 then
+    obj.drawpoly(polys)
+end
+if #walls > 0 then
+    obj.setoption("culling", 0)
+    obj.drawpoly(walls)
+    obj.setoption("culling", culling and 1 or 0)
+end
+
+if #polys == 0 and #walls == 0 then
+    obj.setoption("draw_state", true)
+end

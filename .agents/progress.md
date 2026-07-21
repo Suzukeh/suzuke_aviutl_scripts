@@ -1,33 +1,22 @@
 # 進捗メモ
 
-> 最終更新: 2026-07-15
+> 最終更新: 2026-07-21
+
+各スクリプト・プラグインの詳細は `progress/` 以下の各ファイルを参照。
 
 ## 現在の状況
 
-- [x] IDgen_Su スクリプト作成・仕様準拠確認
-- [x] au2pkg パッケージ作成
-- [x] GitHub Release (v1.0.0) 発行
-- [x] 独立リポジトリ `Suzukeh/IDgen_Su` に移行
-- [x] リリース手順を文書化 (`.agents/knowledge/release-procedure.md`)
+| プロジェクト | 状況 | 詳細 |
+|-------------|------|------|
+| IDgen_Su | ✅ 完了 | [詳細](progress/IDgen_Su.md) |
+| CacheMask_Su | 🔄 未検証, 高速化計画済 | [詳細](progress/CacheMask_Su.md) |
+| Z変位_Su | ⏳ 未検証, 高速化計画済 | [詳細](progress/Z変位_Su.md) |
+| 知識ベース整備 | ✅ 完了 | [詳細](progress/knowledge-base.md) |
+| 波線グラデーション_Su | 🔄 未検証 | [詳細](progress/波線グラデーション_Su.md) |
+| GazeHeatmap_Su | 📝 計画中 | [詳細](progress/GazeHeatmap_Su.md) |
 
 ## 次にやること
 
-## 詰まっていること
-
-（特になし）
-
----
-
-## 過去の完了タスク
-
-- IDgen_Su 開発: 8種のID生成カスタムオブジェクト
-  - UUIDv4, NanoID, ULID, CUID, UUIDv7, ShortID, KSUID, Snowflake
-  - `obj.rand1()` ベースの乱数生成、毎フレーム更新/オブジェクト毎変化のチェックボックス
-  - ドロップダウンによるID種別選択 (`--select@`)
-  - au2pkg パッケージ作成 (package.ini + package.txt CRLF + zip)
-  - GitHub Release v1.0.0
-  - 独立リポジトリ: https://github.com/Suzukeh/IDgen_Su
-  - 設置先: `Script/Suzuke.IDgen_Su/`
-- `.agents/` 知識ベース整備
-- AIコーディングエージェントのベストプラクティス調査・文書化
-- AviUtl2 スクリプト作成ガイド文書化
+- [ ] GazeHeatmap_Su の実装着手
+- [ ] Z変位_Su の高速化実装（Z-1, Z-2）+ 実機検証
+- [ ] CacheMask_Su の高速化実装（C-1/C-3）+ 実機検証

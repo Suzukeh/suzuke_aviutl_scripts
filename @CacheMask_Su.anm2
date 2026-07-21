@@ -1,0 +1,151 @@
+@Capture
+--information:CacheMask_Su v1.4.0 by Suzuke
+--label:クリッピング
+--track@mask_id:マスクID,0,10,0,1
+
+_CacheMask_Su = _CacheMask_Su or {}
+
+if obj.w <= 0 or obj.h <= 0 then return end
+
+local global_key = "CACHE_MASK_" .. tostring(mask_id)
+
+local data, w, h = obj.getpixeldata("object", "rgba")
+if data then
+    _G[global_key] = { data, w, h }
+    _CacheMask_Su[mask_id] = { w, h }
+end
+
+
+@Apply
+--information:CacheMask_Su v1.4.0 by Suzuke
+--label:クリッピング
+--track@mask_id:マスクID,0,10,0,1
+--select@mask_ref:マスク参照=0,輝度=0,透明度=1
+--track@threshold:2値化しきい値[%],0,100,0,1
+--track@mask_power:マスク強度[%],0,100,100,0.1
+--track@mask_blur:マスクぼかし,0,100,0,0.1
+--check@invert:反転,false
+--group:マスク配置,false
+--select@fit_mode:配置モード=1,サイズ合わせる=0,元サイズ配置=1
+--track@mask_x:マスク位置X,-2000,2000,0,1
+--track@mask_y:マスク位置Y,-2000,2000,0,1
+--track@mask_scale:マスク拡大率[%],1,1000,100,0.1
+--group:
+
+--[[pixelshader@ps_apply:
+Texture2D tex_src : register(t0);
+Texture2D tex_mask : register(t1);
+SamplerState smp : register(s0);
+
+cbuffer cb : register(b0) {
+    float power;
+    float invert;
+    float mask_ref;
+    float threshold;
+    float fit_mode;
+    float mask_x;
+    float mask_y;
+    float mask_scale;
+    float src_w;
+    float src_h;
+    float mask_w;
+    float mask_h;
+};
+
+float4 ps_apply(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float4 src = tex_src.Sample(smp, uv);
+
+    float2 mask_uv = uv;
+    if (fit_mode > 0.5) {
+        float2 src_px = uv * float2(src_w, src_h);
+        float2 centered = src_px - float2(src_w, src_h) * 0.5;
+        float2 mask_centered = (centered - float2(mask_x, mask_y)) / mask_scale;
+        float2 mask_px = mask_centered + float2(mask_w, mask_h) * 0.5;
+        mask_uv = mask_px / float2(mask_w, mask_h);
+    }
+
+    float4 m = (any(mask_uv < 0.0) || any(mask_uv > 1.0))
+        ? float4(0,0,0,0)
+        : tex_mask.Sample(smp, mask_uv);
+
+    float l;
+    if (mask_ref > 0.5) {
+        l = m.a;
+    } else {
+        l = dot(m.rgb, float3(0.299, 0.587, 0.114));
+    }
+    if (invert > 0.5) l = 1.0 - l;
+    if (threshold > 0.001) {
+        l = l >= threshold ? 1.0 : 0.0;
+    }
+    l = lerp(1.0, l, power);
+    return float4(src.rgb * l, src.a * l);
+}
+]]
+
+--[[pixelshader@ps_blur:
+Texture2D tex : register(t0);
+SamplerState smp : register(s0);
+
+cbuffer cb : register(b0) {
+    float radius;
+    float dir_x;
+    float dir_y;
+    float tex_w;
+    float tex_h;
+};
+
+float4 ps_blur(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target {
+    float r = min(floor(radius + 0.5), 64.0);
+    float2 texel = float2(dir_x, dir_y) / float2(tex_w, tex_h);
+    float sigma = max(r * 0.5, 0.001);
+    float4 sum = float4(0,0,0,0);
+    float wsum = 0.0;
+    for (int i = -64; i <= 64; i++) {
+        float fi = (float)i;
+        float w = (abs(fi) <= r) ? exp(-(fi*fi) / (2.0 * sigma * sigma)) : 0.0;
+        sum += tex.Sample(smp, uv + texel * fi) * w;
+        wsum += w;
+    }
+    return sum / max(wsum, 1e-6);
+}
+]]
+
+if obj.w <= 0 or obj.h <= 0 then return end
+
+local global_key = "CACHE_MASK_" .. tostring(mask_id)
+local glob = _G[global_key]
+if not glob then return end
+
+local data, pw, ph = glob[1], glob[2], glob[3]
+if pw <= 0 or ph <= 0 then return end
+
+local cache_mask = "cache:mask_" .. tostring(mask_id)
+local cache_src = "cache:masksrc_" .. tostring(mask_id)
+
+obj.copybuffer(cache_src, "object")
+
+obj.setoption("drawtarget", "tempbuffer", pw, ph)
+obj.clearbuffer("tempbuffer")
+obj.putpixeldata("tempbuffer", data, pw, ph, "rgba")
+obj.copybuffer(cache_mask, "tempbuffer")
+obj.setoption("drawtarget", "framebuffer")
+
+if mask_blur > 0 then
+    local br = mask_blur
+    obj.setoption("drawtarget", "tempbuffer", pw, ph)
+    obj.pixelshader("ps_blur", "tempbuffer", { cache_mask }, { br, 1.0, 0.0, pw, ph }, "copy", "clamp")
+    obj.copybuffer(cache_mask, "tempbuffer")
+    obj.pixelshader("ps_blur", "tempbuffer", { cache_mask }, { br, 0.0, 1.0, pw, ph }, "copy", "clamp")
+    obj.copybuffer(cache_mask, "tempbuffer")
+    obj.setoption("drawtarget", "framebuffer")
+end
+
+local p = mask_power / 100
+local inv = invert and 1.0 or 0.0
+local ref = mask_ref
+local th = threshold / 100
+local fit = fit_mode
+local ms = mask_scale / 100
+local sw, sh = obj.w, obj.h
+obj.pixelshader("ps_apply", "object", { cache_src, cache_mask }, { p, inv, ref, th, fit, mask_x, mask_y, ms, sw, sh, pw, ph }, "copy", "clamp")
