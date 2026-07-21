@@ -1,0 +1,37 @@
+{
+  "name": "Suzuke AviUtl Scripts",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {},
+    "ghcr.io/devcontainers-community/features/lua": {}
+  },
+  "forwardPorts": [4096],
+  "portsAttributes": {
+    "4096": {
+      "label": "OpenCode Web",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postAttachCommand": {
+    "start-opencode-web": "bash .devcontainer/opencode-web.sh"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anomalyco.opencode",
+        "sumneko.lua",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "[lua]": {
+          "editor.defaultFormatter": "sumneko.lua"
+        }
+      }
+    }
+  }
+}
