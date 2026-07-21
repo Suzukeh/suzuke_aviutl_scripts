@@ -12,11 +12,16 @@
 | CacheMask_Su | 🔄 未検証, 高速化計画済 | [詳細](progress/CacheMask_Su.md) |
 | Z変位_Su | ⏳ 未検証, 高速化計画済 | [詳細](progress/Z変位_Su.md) |
 | 知識ベース整備 | ✅ 完了 | [詳細](progress/knowledge-base.md) |
-| 波線グラデーション_Su | 🔄 未検証 | [詳細](progress/波線グラデーション_Su.md) |
+| 波線グラデーション_Su | 🔄 未検証, 高速化計画済 | [詳細](progress/波線グラデーション_Su.md) |
+| 文字種別制御_Su | 🔄 未検証, 高速化計画済, バグ有 | [詳細](progress/文字種別制御_Su.md) |
 | GazeHeatmap_Su | 📝 計画中 | [詳細](progress/GazeHeatmap_Su.md) |
 
 ## 次にやること
 
+- [ ] 文字種別制御_Su の parse_ranges バグ修正（最優先）
 - [ ] GazeHeatmap_Su の実装着手
 - [ ] Z変位_Su の高速化実装（Z-1, Z-2）+ 実機検証
 - [ ] CacheMask_Su の高速化実装（C-1/C-3）+ 実機検証
+- [ ] 波線グラデーション_Su の高速化実装（W-1, W-2）+ 実機検証
+
+(実装順は `optimization.md` の優先度表を参照)
