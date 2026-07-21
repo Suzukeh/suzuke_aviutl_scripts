@@ -4,8 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/rust:1": {},
-    "ghcr.io/devcontainers-community/features/lua": {}
+    "ghcr.io/devcontainers/features/rust:1": {}
   },
   "forwardPorts": [4096],
   "portsAttributes": {
